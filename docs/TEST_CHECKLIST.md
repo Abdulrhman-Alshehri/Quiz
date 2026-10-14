@@ -4,6 +4,8 @@ PRD deliverable 5. "Automated" items run with `npm run test:api` (backend, 59 ch
 
 Last full run: 14 October 2026, all automated checks passing, including the browser test against the live site (https://abdulrhman-alshehri.github.io/Quiz/, 25/25) with Supabase Realtime connected.
 
+After the restyle to the deck look (14 October 2026, evening): unit tests 24/24; browser test 24/24 locally and against the live site, run with a temporary presenter token instead of the passcode, so the two passcode checks were skipped (the passcode itself is unchanged and was last verified in the earlier run). The blue QR codes on the big screen decode correctly at full, 60% and 150% size.
+
 | Area | What is checked | How | Result |
 |---|---|---|---|
 | Multiple participants on separate devices | Presenter, big screen and three phones in separate browsers follow the same session through a chapter | Automated (e2e) | Pass |

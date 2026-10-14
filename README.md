@@ -123,7 +123,7 @@ SUPABASE_URL=https://<ref>.supabase.co SUPABASE_KEY=<publishable key> ADMIN_PASS
 ADMIN_PASSCODE=... BASE_URL=http://localhost:4173/ npm run test:e2e
 ```
 
-Both create sessions titled `[Test] …` and end them. Remove them later from the Supabase Table Editor if you want a clean list.
+Both create sessions titled `[Test] …` and end them. Remove them later from the Supabase Table Editor if you want a clean list. Never run them against the live project during a workshop: while a test runs, its `[Test]` session is the newest open session, so the permanent join link on the slides (`#/join`) opens the test instead of the workshop.
 
 The browser test also accepts `ADMIN_TOKEN` instead of `ADMIN_PASSCODE`: a valid presenter sign-in token (for example the `token` value stored under `npsquiz:admin` in a signed-in browser). It then skips the two passcode checks, so the passcode itself never has to be shared.
 
