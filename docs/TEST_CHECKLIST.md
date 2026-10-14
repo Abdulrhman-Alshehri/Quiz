@@ -2,7 +2,7 @@
 
 PRD deliverable 5. "Automated" items run with `npm run test:api` (backend, 59 checks) and `npm run test:e2e` (browsers, 25 checks) against the live Supabase project; unit tests run with `npm test` (24 tests) on every deploy.
 
-Last full run: 14 October 2026, all automated checks passing.
+Last full run: 14 October 2026, all automated checks passing, including the browser test against the live site (https://abdulrhman-alshehri.github.io/Quiz/, 25/25) with Supabase Realtime connected.
 
 | Area | What is checked | How | Result |
 |---|---|---|---|

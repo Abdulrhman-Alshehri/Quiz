@@ -4,7 +4,8 @@ A live, phone-based quiz with a leaderboard for the **service advisor NPS orient
 
 - **Frontend:** React 18 + Vite, plain CSS, hosted on GitHub Pages (static).
 - **Backend:** Supabase (Postgres, row-level security, database functions, Realtime).
-- **Live site:** `https://abdulrhman-alshehri.github.io/Quiz/` (after GitHub Pages is switched on; see [Deploy](#4-deploy-to-github-pages)).
+- **Live site:** https://abdulrhman-alshehri.github.io/Quiz/ (the path is case-sensitive: `/Quiz/`, not `/quiz/`).
+- **Permanent join link for slides:** https://abdulrhman-alshehri.github.io/Quiz/#/join (always opens the newest open session).
 
 | Screen | Address | Who |
 |---|---|---|
