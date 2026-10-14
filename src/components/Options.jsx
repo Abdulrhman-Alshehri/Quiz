@@ -1,5 +1,6 @@
-// Answer options. Each option has a colour, a letter and a shape, so nothing
-// relies on colour alone. Red and green are kept for right/wrong feedback only.
+// Answer options: white cards with a coloured badge holding a shape and a
+// letter, so nothing relies on colour alone. Red and green are kept for
+// right/wrong feedback only.
 const SHAPE_PATHS = {
   A: <path d="M12 3 L22 20 H2 Z" />,
   B: <path d="M12 2 L22 12 L12 22 L2 12 Z" />,
@@ -56,6 +57,7 @@ export function OptionTile({ option, revealed, correct, count, total }) {
     >
       <span className="tile__mark" aria-hidden="true">
         <Shape id={option.id} />
+        <span className="tile__letter">{option.id}</span>
       </span>
       <span className="tile__text" dir="auto">{option.text}</span>
       {revealed && (

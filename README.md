@@ -3,6 +3,7 @@
 A live, phone-based quiz with a leaderboard for the **service advisor NPS orientation workshop**. A presenter runs four chapters of five timed multiple-choice questions; advisors join by scanning a QR code and typing a name, with no accounts or passwords. The answer keys, deadlines and scoring all run in the database, so participants cannot see answers early or change their scores.
 
 - **Frontend:** React 18 + Vite, plain CSS, hosted on GitHub Pages (static).
+- **Look and feel:** follows the NPS orientation deck: Almajdouie logo, brand blue `#134A9C` bands and section pages, light grey pages with white cards, and Calibri (Carlito, an open font with the same metrics, where Calibri is not installed). Styles are in `src/styles.css`; the logo is `src/assets/almajdouie-logo-white.png`.
 - **Backend:** Supabase (Postgres, row-level security, database functions, Realtime).
 - **Live site:** https://abdulrhman-alshehri.github.io/Quiz/ (the path is case-sensitive: `/Quiz/`, not `/quiz/`).
 - **Permanent join link for slides:** https://abdulrhman-alshehri.github.io/Quiz/#/join (always opens the newest open session).
@@ -123,6 +124,8 @@ ADMIN_PASSCODE=... BASE_URL=http://localhost:4173/ npm run test:e2e
 ```
 
 Both create sessions titled `[Test] …` and end them. Remove them later from the Supabase Table Editor if you want a clean list.
+
+The browser test also accepts `ADMIN_TOKEN` instead of `ADMIN_PASSCODE`: a valid presenter sign-in token (for example the `token` value stored under `npsquiz:admin` in a signed-in browser). It then skips the two passcode checks, so the passcode itself never has to be shared.
 
 ---
 

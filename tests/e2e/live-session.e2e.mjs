@@ -4,6 +4,10 @@
 //   npm run build && npm run preview          (in one terminal)
 //   ADMIN_PASSCODE=... BASE_URL=http://localhost:4173/ npm run test:e2e
 //
+// Instead of the passcode you can pass ADMIN_TOKEN, a valid presenter sign-in
+// token (for example from a signed-in browser's storage, key "npsquiz:admin");
+// the two sign-in checks are then skipped.
+//
 // Screenshots go to tests/e2e/output (or SHOTS_DIR). The session it creates is
 // titled "[Test] ..." and is ended at the end of the run.
 import { chromium } from 'playwright';
@@ -12,9 +16,10 @@ import path from 'node:path';
 
 const BASE = (process.env.BASE_URL || 'http://localhost:4173/').replace(/#.*$/, '');
 const PASS = process.env.ADMIN_PASSCODE;
+const TOKEN = process.env.ADMIN_TOKEN;
 const SHOTS = process.env.SHOTS_DIR || path.resolve('tests/e2e/output');
 fs.mkdirSync(SHOTS, { recursive: true });
-if (!PASS) throw new Error('Set ADMIN_PASSCODE');
+if (!PASS && !TOKEN) throw new Error('Set ADMIN_PASSCODE (or ADMIN_TOKEN)');
 
 const results = [];
 const check = (name, ok, detail = '') => {
@@ -42,16 +47,29 @@ const watch = (page, label) => {
 try {
   // ---------- presenter ----------
   const adminCtx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
+  if (!PASS) {
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    await adminCtx.addInitScript(([token, exp]) => {
+      try {
+        window.localStorage.setItem('npsquiz:admin', JSON.stringify({ token, expiresAt: exp }));
+      } catch {
+        // storage blocked: the sign-in check below fails and says so
+      }
+    }, [TOKEN, expiresAt]);
+  }
   const admin = await adminCtx.newPage();
   watch(admin, 'admin');
   await admin.goto(`${BASE}#/admin`);
-  await admin.getByLabel('Passcode').fill('wrong-passcode');
-  await admin.getByRole('button', { name: 'Sign in' }).click();
-  check('presenter: wrong passcode shows an error', await appears(admin.getByText('That passcode is not correct.')));
-  await admin.getByLabel('Passcode').fill(PASS);
-  await admin.getByRole('button', { name: 'Sign in' }).click();
+  if (PASS) {
+    await admin.getByLabel('Passcode').fill('wrong-passcode');
+    await admin.getByRole('button', { name: 'Sign in' }).click();
+    check('presenter: wrong passcode shows an error', await appears(admin.getByText('That passcode is not correct.')));
+    await shot(admin, '00-admin-sign-in');
+    await admin.getByLabel('Passcode').fill(PASS);
+    await admin.getByRole('button', { name: 'Sign in' }).click();
+  }
   await admin.getByRole('heading', { name: 'New session' }).waitFor({ timeout: 15000 });
-  check('presenter: signs in', true);
+  check(PASS ? 'presenter: signs in' : 'presenter: signed in with a presenter token (passcode checks skipped)', true);
   await shot(admin, '01-admin-home');
 
   await admin.getByLabel('Title shown on the big screen').fill('[Test] End-to-end run');
@@ -124,6 +142,7 @@ try {
   await p1.page.getByText(/Locked in: B/).waitFor({ timeout: 10000 });
   check('phone: answer is locked in and other options are disabled', await p1.page.locator('.opt[data-option="C"]').isDisabled());
   await shot(p1.page, '09-phone-answered');
+  await shot(p3.page, '09b-phone-question-open');
   await screen.waitForFunction(() => /2\s+of 3 answered/.test(document.body.innerText), null, { timeout: 15000 });
   check('screen: shows 2 of 3 answered, without the answer key', (await screen.locator('.tile.is-correct').count()) === 0);
   await shot(screen, '10-screen-question');

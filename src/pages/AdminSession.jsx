@@ -9,6 +9,7 @@ import { downloadCsv } from '../utils/csv';
 import { itemAnalysisCsv, resultsCsv } from '../utils/exports';
 import { fileStamp, percent, plural, points, seconds } from '../utils/format';
 import { SCORING_MODES } from '../utils/scoring';
+import { Logo } from '../components/Brand';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Shape } from '../components/Options';
 import { Plate } from '../components/Plate';
@@ -203,7 +204,8 @@ function Console({ token, sessionId, onSignOut }) {
 
   return (
     <main className="admin console">
-      <header className="admin__bar">
+      <header className="admin__bar on-blue">
+        <Logo />
         <a className="admin__brand" href="#/admin">NPS Live Quiz</a>
         <span className="admin__where" dir="auto">{s.title}</span>
         <ConnectionBadge connection={feed.connection} />

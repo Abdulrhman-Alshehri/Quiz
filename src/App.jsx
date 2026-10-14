@@ -12,15 +12,12 @@ const Screen = lazy(() => import('./pages/Screen'));
 const AdminHome = lazy(() => import('./pages/AdminHome'));
 const AdminSession = lazy(() => import('./pages/AdminSession'));
 
-const THEME_BY_SECTION = { admin: 'light' };
-
 export default function App() {
   const { path, query } = useRoute();
   const parts = path.split('/').filter(Boolean);
   const section = parts[0] || '';
 
   useEffect(() => {
-    document.body.dataset.theme = THEME_BY_SECTION[section] || 'dark';
     document.body.dataset.section = section || 'home';
   }, [section]);
 

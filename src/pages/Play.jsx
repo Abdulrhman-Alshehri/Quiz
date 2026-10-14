@@ -5,6 +5,7 @@ import { useNow, useServerClock } from '../lib/clock';
 import { useFeed } from '../lib/useFeed';
 import { navigate } from '../lib/router';
 import { clearSeat, getSeat, lastSeatSessionId } from '../lib/storage';
+import { BluePage, Logo } from '../components/Brand';
 import { OptionButton } from '../components/Options';
 import { Timer, timerState } from '../components/Timer';
 import { ConnectionBadge, Notice, Spinner, VisuallyHidden } from '../components/ui';
@@ -23,11 +24,11 @@ function NoSeat() {
     return () => clearTimeout(t);
   }, []);
   return (
-    <main className="page page--narrow">
+    <BluePage>
       <h1 className="h1">Join first</h1>
       <p className="lead">This phone has not joined a quiz yet. Opening the join page…</p>
-      <a className="btn btn--primary" href="#/join">Join the quiz</a>
-    </main>
+      <a className="btn btn--primary btn--xl" href="#/join">Join the quiz</a>
+    </BluePage>
   );
 }
 
@@ -76,11 +77,11 @@ function Game({ seat }) {
   const fatal = feed.error && ['PARTICIPANT_NOT_FOUND', 'PARTICIPANT_REMOVED'].includes(feed.error.code);
   if (fatal) {
     return (
-      <main className="page page--narrow">
+      <BluePage>
         <h1 className="h1">{feed.error.code === 'PARTICIPANT_REMOVED' ? 'You were removed from this quiz' : 'Your place was not found'}</h1>
         <p className="lead">{messageFor(feed.error)}</p>
         <button
-          className="btn btn--primary btn--block"
+          className="btn btn--primary btn--block btn--xl"
           type="button"
           onClick={() => {
             clearSeat(seat.sessionId);
@@ -89,16 +90,19 @@ function Game({ seat }) {
         >
           Join again
         </button>
-      </main>
+      </BluePage>
     );
   }
 
+  // Chapter intros and the final result use the deck's blue section-slide look;
+  // questions, reveals and results use the light content-slide look.
+  const phase = state?.session?.phase;
+  const active = state?.chapters.find((c) => c.id === state.session.activeChapterId);
+  const blue = (phase === 'chapter_intro' && !!active) || phase === 'ended';
   let body;
   if (!state) {
     body = <Spinner label="Connecting to the quiz…" />;
   } else {
-    const phase = state.session.phase;
-    const active = state.chapters.find((c) => c.id === state.session.activeChapterId);
     if (phase === 'ended') {
       body = <FinalView state={state} standing={standing} />;
     } else if (phase === 'question' && state.question) {
@@ -125,23 +129,28 @@ function Game({ seat }) {
   }
 
   return (
-    <div className="play">
-      <header className="hud">
-        <span className="hud__name" dir="auto">{seat.displayName}</span>
-        <span className="hud__score">
-          <strong>{points(standing?.totalPoints ?? 0)}</strong> pts
-        </span>
-        {standing?.rank && state && standing.answeredCount + standing.timedOutCount > 0 && (
-          <span className="hud__rank">
-            {ordinal(standing.rank)} of {state.participantCount}
+    <div className={`play${blue ? ' play--blue surface-blue' : ''}`}>
+      <header className="hud on-blue">
+        <div className="hud__top">
+          <Logo />
+          <ConnectionBadge connection={feed.connection} />
+        </div>
+        <div className="hud__me">
+          <span className="hud__name" dir="auto">{seat.displayName}</span>
+          <span className="hud__score">
+            <strong>{points(standing?.totalPoints ?? 0)}</strong> pts
           </span>
-        )}
-        <ConnectionBadge connection={feed.connection} />
+          {standing?.rank && state && standing.answeredCount + standing.timedOutCount > 0 && (
+            <span className="hud__rank">
+              {ordinal(standing.rank)} of {state.participantCount}
+            </span>
+          )}
+        </div>
       </header>
       {feed.connection === 'offline' && (
         <Notice tone="warn">Connection lost. Keep this page open; it reconnects by itself and your saved answers are safe.</Notice>
       )}
-      <main className="play__main">{body}</main>
+      <main className={`play__main${blue ? ' on-blue' : ''}`}>{body}</main>
     </div>
   );
 }
@@ -267,6 +276,7 @@ function RevealView({ q, chapter, standing, count }) {
       </div>
       {q.explanation && (
         <p className="reveal__why" dir="auto">
+          <span className="reveal__why-label">Why</span>
           {q.explanation}
         </p>
       )}

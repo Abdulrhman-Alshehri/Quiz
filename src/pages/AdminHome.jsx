@@ -6,6 +6,7 @@ import { useAdminToken } from '../lib/useAdmin';
 import { downloadJson } from '../utils/csv';
 import { dateTime, fileStamp, plural } from '../utils/format';
 import { SCORING_MODES } from '../utils/scoring';
+import { Logo } from '../components/Brand';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Plate } from '../components/Plate';
 import { Notice, Spinner } from '../components/ui';
@@ -51,7 +52,8 @@ function Dashboard({ token, onSignOut }) {
 
   return (
     <main className="admin">
-      <header className="admin__bar">
+      <header className="admin__bar on-blue">
+        <Logo />
         <a className="admin__brand" href="#/admin">NPS Live Quiz</a>
         <span className="admin__where">Presenter console</span>
         <button className="btn btn--quiet" type="button" onClick={signOut}>

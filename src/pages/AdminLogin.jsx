@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
 import { QuizError, messageFor } from '../lib/errors';
+import { BluePage } from '../components/Brand';
 import { Notice } from '../components/ui';
 
 export default function AdminLogin({ onSignedIn, reason }) {
@@ -28,7 +29,7 @@ export default function AdminLogin({ onSignedIn, reason }) {
   };
 
   return (
-    <main className="admin admin--login">
+    <BluePage className="admin--login">
       <form className="card login" onSubmit={submit}>
         <h1 className="h2">Presenter sign-in</h1>
         <p className="muted">Enter the presenter passcode to run sessions, see results and download reports.</p>
@@ -51,6 +52,6 @@ export default function AdminLogin({ onSignedIn, reason }) {
         <p className="muted small">Sign-in lasts 12 hours on this browser. Sign out when you use a shared laptop.</p>
         <a className="link" href="#/">Back to the start page</a>
       </form>
-    </main>
+    </BluePage>
   );
 }
