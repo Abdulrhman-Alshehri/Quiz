@@ -17,15 +17,24 @@ export function timerState(question, now) {
   return { phase: remaining > 0 ? 'running' : 'done', remaining, fraction: remaining / durationMs, leadIn: 0 };
 }
 
+// The number is shown large on its own, so the label only needs the noun form.
+const pluralRules = new Intl.PluralRules('ar');
+function secondsLeftLabel(n) {
+  const cat = pluralRules.select(n);
+  if (cat === 'two') return 'ثانيتان متبقيتان';
+  if (cat === 'few') return 'ثوان متبقية';
+  return 'ثانية متبقية';
+}
+
 export function Timer({ question, now, size = 'm' }) {
   const t = timerState(question, now);
   const secs = t.phase === 'leadin' ? Math.ceil(t.leadIn / 1000) : Math.ceil(t.remaining / 1000);
   const low = t.phase === 'running' && t.remaining <= 5000;
   const label = {
-    leadin: 'Get ready',
-    paused: 'Paused',
-    done: 'Time is up',
-    running: secs === 1 ? 'second left' : 'seconds left',
+    leadin: 'استعد',
+    paused: 'متوقف مؤقتًا',
+    done: 'انتهى الوقت',
+    running: secondsLeftLabel(secs),
   }[t.phase];
   return (
     <div

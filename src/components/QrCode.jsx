@@ -21,7 +21,7 @@ export function QrCode({ value, size = 240, label, fluid = false }) {
   }, [value, size]);
   return (
     <div className="qr" style={fluid ? undefined : { width: size, height: size }}>
-      {src ? <img src={src} width={size} height={size} alt={label || `QR code linking to ${value}`} /> : null}
+      {src ? <img src={src} width={size} height={size} alt={label || `رمز QR يفتح ${value}`} /> : null}
     </div>
   );
 }

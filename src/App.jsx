@@ -47,7 +47,7 @@ export default function App() {
     <Suspense
       fallback={
         <main className="page page--narrow">
-          <Spinner label="Loading…" />
+          <Spinner label="جارٍ التحميل…" />
         </main>
       }
     >

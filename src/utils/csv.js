@@ -8,7 +8,7 @@ export function csvCell(value) {
   if (typeof value === 'number') {
     text = Number.isFinite(value) ? String(value) : '';
   } else if (typeof value === 'boolean') {
-    text = value ? 'yes' : 'no';
+    text = value ? 'نعم' : 'لا';
   } else {
     text = String(value);
     if (FORMULA_START.test(text)) text = `'${text}`;

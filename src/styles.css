@@ -1,4 +1,4 @@
-/* NPS Live Quiz in the Almajdouie deck style.
+/* NPS Live Quiz in the Almajdouie deck style, Arabic and right to left.
    Brand blue for bands, title and section pages; light grey content pages with
    white cards, thin borders and soft shadows; blue numbered circles; Calibri
    (Carlito where Calibri is not installed). Red, amber and green keep their NPS
@@ -34,7 +34,8 @@
   --opt-c: #b45309;
   --opt-d: #0e7490;
 
-  --font: Calibri, Carlito, 'Segoe UI', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, Arial, sans-serif;
+  /* Latin letters and digits in Calibri (or Carlito); Arabic in IBM Plex Sans Arabic. */
+  --font: Calibri, Carlito, 'IBM Plex Sans Arabic', 'Segoe UI', 'Geeza Pro', Tahoma, Arial, sans-serif;
   --mono: Consolas, ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --radius: 8px;
   --radius-s: 6px;
@@ -104,7 +105,7 @@ body {
   color: var(--ink);
   font-family: var(--font);
   font-size: 17px;
-  line-height: 1.45;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -158,17 +159,17 @@ code {
 /* ---------- type ---------- */
 .h1 {
   margin: 0 0 10px;
-  font: 700 clamp(30px, 7.4vw, 44px) / 1.08 var(--font);
+  font: 700 clamp(30px, 7.4vw, 44px) / 1.3 var(--font);
   color: var(--fg);
 }
 .h2 {
   margin: 0 0 8px;
-  font: 700 clamp(24px, 5vw, 32px) / 1.12 var(--font);
+  font: 700 clamp(24px, 5vw, 32px) / 1.35 var(--font);
   color: var(--heading);
 }
 .h3 {
   margin: 0 0 8px;
-  font: 700 20px / 1.25 var(--font);
+  font: 700 20px / 1.4 var(--font);
   color: var(--heading);
 }
 .lead {
@@ -249,7 +250,7 @@ code {
 .steps {
   display: grid;
   gap: 10px;
-  padding-left: 22px;
+  padding-inline-start: 22px;
 }
 
 /* Numbered steps, as on the deck's quiz slides. */
@@ -327,7 +328,7 @@ code {
   border-radius: var(--radius-s);
   background: transparent;
   color: inherit;
-  font: 700 17px / 1.2 var(--font);
+  font: 700 17px / 1.35 var(--font);
   text-decoration: none;
   cursor: pointer;
   transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
@@ -346,8 +347,7 @@ code {
   color: var(--outline-fg);
 }
 .btn--quiet {
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-inline: 10px;
   color: var(--muted);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -422,7 +422,7 @@ code {
   border-radius: var(--radius-s);
   background: #fff;
   color: var(--ink);
-  font: 400 18px / 1.3 var(--font);
+  font: 400 18px / 1.4 var(--font);
 }
 .input:focus-visible {
   outline: none;
@@ -484,7 +484,7 @@ select.input {
   gap: 12px;
   margin: 10px 0;
   padding: 11px 14px;
-  border-left: 4px solid var(--blue);
+  border-inline-start: 4px solid var(--blue);
   border-radius: var(--radius-s);
   background: var(--blue-tint);
   color: var(--ink);
@@ -640,8 +640,7 @@ select.input {
 }
 .landing__title {
   margin: 0;
-  font: 700 clamp(46px, 10vw, 88px) / 1 var(--font);
-  letter-spacing: -0.01em;
+  font: 700 clamp(42px, 9vw, 80px) / 1.25 var(--font);
 }
 .landing__sub {
   margin: 12px 0 6px;
@@ -818,7 +817,7 @@ select.input {
 }
 .q__text {
   margin: 2px 0;
-  font: 700 clamp(23px, 5.8vw, 30px) / 1.25 var(--font);
+  font: 700 clamp(22px, 5.6vw, 29px) / 1.55 var(--font);
   color: var(--fg);
 }
 .q__status {
@@ -861,7 +860,7 @@ select.input {
   display: block;
   height: 100%;
   background: var(--blue);
-  transform-origin: left center;
+  transform-origin: right center; /* the bar drains towards the start of the line (right) */
   transition: transform 0.1s linear;
 }
 .timer.is-leadin .timer__num {
@@ -937,7 +936,7 @@ select.input {
   background: #fff;
   color: var(--ink);
   text-align: start;
-  font: 400 19px / 1.25 var(--font);
+  font: 400 19px / 1.45 var(--font);
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: opacity 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
@@ -1084,7 +1083,7 @@ select.input {
 }
 .reveal__title {
   margin: 8px 0 0;
-  font: 700 38px / 1.05 var(--font);
+  font: 700 36px / 1.3 var(--font);
   color: var(--ink);
 }
 .reveal--correct .reveal__title {
@@ -1098,7 +1097,7 @@ select.input {
 }
 .reveal__points {
   margin: 0;
-  font: 700 26px / 1.2 var(--font);
+  font: 700 26px / 1.35 var(--font);
   color: var(--blue);
 }
 .reveal__answers {
@@ -1136,12 +1135,12 @@ select.input {
 }
 .intro__num {
   margin: 0;
-  font: 700 20px / 1.2 var(--font);
+  font: 700 20px / 1.4 var(--font);
   color: var(--accent);
 }
 .intro__title {
   margin: 0;
-  font: 700 clamp(34px, 9.6vw, 52px) / 1.05 var(--font);
+  font: 700 clamp(32px, 9vw, 48px) / 1.3 var(--font);
   color: var(--fg);
 }
 .intro__rules {
@@ -1282,7 +1281,7 @@ select.input {
 }
 .screen__title {
   margin: 0;
-  font: 700 clamp(22px, 2.4vw, 46px) / 1.1 var(--font);
+  font: 700 clamp(22px, 2.3vw, 44px) / 1.35 var(--font);
   color: #fff;
 }
 .screen__subtitle {
@@ -1320,7 +1319,7 @@ select.input {
 }
 .screen__headline {
   margin: 0;
-  font: 700 clamp(44px, 5.4vw, 100px) / 1 var(--font);
+  font: 700 clamp(42px, 5vw, 96px) / 1.25 var(--font);
   color: var(--fg);
 }
 .screen__sub {
@@ -1330,7 +1329,7 @@ select.input {
 }
 .screen__corner {
   position: fixed;
-  right: clamp(12px, 1.6vw, 28px);
+  inset-inline-end: clamp(12px, 1.6vw, 28px);
   bottom: clamp(44px, 6vh, 72px);
   display: flex;
   flex-direction: column;
@@ -1392,7 +1391,6 @@ select.input {
 .lobby__note {
   margin: 0;
   font-size: clamp(15px, 1.2vw, 22px);
-  font-style: italic;
   color: var(--blue-soft);
 }
 .lobby__card {
@@ -1421,7 +1419,7 @@ select.input {
 }
 .lobby__card-title {
   margin: 0;
-  font: 700 clamp(22px, 2.2vw, 40px) / 1.1 var(--font);
+  font: 700 clamp(22px, 2.2vw, 40px) / 1.35 var(--font);
   color: var(--blue);
 }
 .lobby__card .plate {
@@ -1488,7 +1486,7 @@ select.input {
 }
 .chapter-board__title {
   margin: 0;
-  font: 700 clamp(46px, 5.8vw, 112px) / 1.02 var(--font);
+  font: 700 clamp(44px, 5.4vw, 104px) / 1.3 var(--font);
   color: #fff;
 }
 .chapter-board__rules {
@@ -1514,7 +1512,7 @@ select.input {
 .qboard__text {
   max-width: 32ch;
   margin: 0;
-  font: 700 clamp(32px, 3.8vw, 72px) / 1.15 var(--font);
+  font: 700 clamp(30px, 3.6vw, 68px) / 1.45 var(--font);
   color: var(--ink);
 }
 .qboard__side {
@@ -1543,7 +1541,7 @@ select.input {
 }
 .qboard__ready {
   margin: 0;
-  font: 700 clamp(44px, 5vw, 92px) / 1 var(--font);
+  font: 700 clamp(44px, 5vw, 92px) / 1.3 var(--font);
   color: var(--blue);
   text-align: center;
 }
@@ -1558,7 +1556,7 @@ select.input {
 }
 .qboard__why .reveal__why-label {
   display: inline;
-  margin: 0 0.4em 0 0;
+  margin-inline-end: 0.5em;
 }
 .tiles {
   display: grid;
@@ -1576,7 +1574,7 @@ select.input {
   border-radius: var(--radius);
   background: #fff;
   color: var(--ink);
-  font: 400 clamp(20px, 2.1vw, 40px) / 1.2 var(--font);
+  font: 400 clamp(20px, 2vw, 38px) / 1.45 var(--font);
   box-shadow: var(--shadow);
   transition: opacity 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
 }
@@ -1750,7 +1748,7 @@ select.input {
 }
 .podium__name {
   max-width: 100%;
-  font: 700 clamp(20px, 2vw, 38px) / 1.15 var(--font);
+  font: 700 clamp(20px, 2vw, 38px) / 1.4 var(--font);
   text-align: center;
   overflow-wrap: anywhere;
 }
@@ -1819,9 +1817,9 @@ select.input {
   height: 30px;
 }
 .admin__brand {
-  padding-left: 16px;
-  border-left: 1px solid rgba(255, 255, 255, 0.35);
-  font: 700 20px / 1 var(--font);
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.35);
+  font: 700 20px / 1.3 var(--font);
   color: #fff;
   text-decoration: none;
   white-space: nowrap;
@@ -1904,7 +1902,7 @@ select.input {
   display: grid;
   gap: 4px;
   margin: 10px 0;
-  padding-left: 22px;
+  padding-inline-start: 22px;
 }
 .bank summary {
   margin: 4px 0;
@@ -1913,7 +1911,7 @@ select.input {
   display: grid;
   gap: 6px;
   margin: 6px 0 10px;
-  padding-left: 22px;
+  padding-inline-start: 22px;
   font-size: 15px;
 }
 
@@ -2032,10 +2030,10 @@ select.input {
 }
 .dist__n {
   font: 700 19px / 1 var(--font);
-  text-align: right;
+  text-align: end;
 }
 .dist__key {
-  margin-left: 6px;
+  margin-inline-start: 6px;
   padding: 1px 7px;
   border-radius: 4px;
   background: var(--green-tint);
@@ -2130,7 +2128,7 @@ select.input {
   font-size: 14px;
   font-weight: 700;
   color: var(--muted);
-  text-align: left;
+  text-align: start;
   white-space: nowrap;
 }
 .table td {
@@ -2138,14 +2136,14 @@ select.input {
   border-bottom: 1px solid var(--line);
 }
 .table .num {
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
 }
 .presence {
   display: inline-block;
   width: 8px;
   height: 8px;
-  margin-right: 8px;
+  margin-inline-end: 8px;
   border-radius: 50%;
   background: var(--line-strong);
   vertical-align: middle;
@@ -2179,7 +2177,7 @@ select.input {
 }
 .dialog__title {
   margin: 0;
-  font: 700 26px / 1.15 var(--font);
+  font: 700 26px / 1.4 var(--font);
   color: var(--blue);
 }
 .dialog__body p {
@@ -2223,7 +2221,7 @@ select.input {
     gap: 8px 12px;
   }
   .admin__brand {
-    padding-left: 12px;
+    padding-inline-start: 12px;
   }
   .console__status {
     flex-direction: column;

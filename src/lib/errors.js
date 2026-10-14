@@ -1,44 +1,45 @@
 // Database functions raise short codes (for example NAME_TAKEN). This file turns
 // them into plain-language messages that say what happened and what to do next.
 const MESSAGES = {
-  NETWORK: 'No connection right now. Check your internet; the page keeps retrying.',
-  NOT_CONFIGURED: 'This copy of the quiz is not connected to a database yet.',
-  SESSION_NOT_FOUND: 'No quiz uses that code. Check the code on the big screen and try again.',
-  SESSION_ENDED: 'This quiz has ended.',
-  REGISTRATION_CLOSED: 'Joining is closed for this quiz. Ask the presenter to reopen it.',
-  NAME_REQUIRED: 'Enter your name to join.',
-  NAME_TOO_LONG: 'Use 30 characters or fewer.',
-  NAME_INVALID: 'Remove special control characters from your name.',
-  NAME_TAKEN: 'Someone already joined with that name. Add an initial or your branch, for example "Omar J."',
-  PARTICIPANT_NOT_FOUND: 'Your place in this quiz could not be found. Join again with your name.',
-  PARTICIPANT_REMOVED: 'The presenter removed this name from the quiz.',
-  QUESTION_CLOSED: 'This question is already closed.',
-  QUESTION_NOT_ACTIVE: 'That question is no longer open.',
-  QUESTION_PAUSED: 'The presenter paused the quiz, so your answer was not sent. Try again when it resumes.',
-  QUESTION_NOT_STARTED: 'Answers open when the timer starts.',
-  DEADLINE_PASSED: 'Time ran out before your answer arrived.',
-  INVALID_OPTION: 'Choose one of the four answers.',
-  ADMIN_AUTH_REQUIRED: 'Your presenter sign-in has expired. Sign in again.',
-  INVALID_PASSCODE: 'That passcode is not correct.',
-  TOO_MANY_ATTEMPTS: 'Too many wrong passcodes from this network. Wait 15 minutes, then try again.',
-  ADMIN_NOT_CONFIGURED: 'No presenter passcode is set yet. See "Set the presenter passcode" in the README.',
-  PASSCODE_TOO_SHORT: 'Use 10 to 72 characters for the new passcode.',
-  BANK_NOT_READY: 'The question bank needs 4 chapters with 5 questions each before you can create a session.',
-  QUESTION_IN_PROGRESS: 'Reveal the current question first.',
-  CHAPTER_COMPLETED: 'This chapter is finished. Reset it if you want to play it again.',
-  CHAPTER_NOT_FOUND: 'That chapter is not part of this session.',
-  CHAPTER_NOT_FINISHED: 'Some questions in this chapter have not been played yet.',
-  NO_ACTIVE_CHAPTER: 'Start a chapter first.',
-  NO_MORE_QUESTIONS: 'Every question in this chapter has been played.',
-  INVALID_PHASE: 'That step is not available any more. The console has refreshed.',
-  CONFIRMATION_REQUIRED: 'Type RESET to confirm.',
-  SESSION_NOT_FOUND_OR_ENDED: 'This session has ended.',
-  TITLE_TOO_LONG: 'Use 120 characters or fewer for the session title.',
+  NETWORK: 'لا يوجد اتصال الآن. تحقق من الإنترنت؛ الصفحة تعيد المحاولة تلقائيًا.',
+  NOT_CONFIGURED: 'هذه النسخة من المسابقة غير مرتبطة بقاعدة بيانات بعد.',
+  SESSION_NOT_FOUND: 'لا توجد مسابقة بهذا الرمز. تحقق من الرمز على الشاشة الكبيرة وحاول مرة أخرى.',
+  SESSION_ENDED: 'انتهت هذه المسابقة.',
+  REGISTRATION_CLOSED: 'الانضمام مغلق في هذه المسابقة. اطلب من المقدم إعادة فتحه.',
+  NAME_REQUIRED: 'اكتب اسمك للانضمام.',
+  NAME_TOO_LONG: 'استخدم 30 حرفًا أو أقل.',
+  NAME_INVALID: 'احذف الرموز الخاصة من اسمك.',
+  NAME_TAKEN: 'انضم شخص بهذا الاسم من قبل. أضف الحرف الأول من اسم العائلة أو اسم فرعك، مثل «عمر ج».',
+  PARTICIPANT_NOT_FOUND: 'تعذر العثور على مكانك في هذه المسابقة. انضم مرة أخرى باسمك.',
+  PARTICIPANT_REMOVED: 'أزال المقدم هذا الاسم من المسابقة.',
+  QUESTION_CLOSED: 'هذا السؤال مغلق بالفعل.',
+  QUESTION_NOT_ACTIVE: 'هذا السؤال لم يعد مفتوحًا.',
+  QUESTION_PAUSED: 'أوقف المقدم المسابقة مؤقتًا، فلم تُرسل إجابتك. حاول مرة أخرى عند الاستئناف.',
+  QUESTION_NOT_STARTED: 'تفتح الإجابات عند بدء المؤقت.',
+  DEADLINE_PASSED: 'انتهى الوقت قبل وصول إجابتك.',
+  INVALID_OPTION: 'اختر إحدى الإجابات الأربع.',
+  ADMIN_AUTH_REQUIRED: 'انتهت صلاحية دخولك كمقدم. سجل الدخول مرة أخرى.',
+  INVALID_PASSCODE: 'رمز المرور غير صحيح.',
+  TOO_MANY_ATTEMPTS: 'محاولات خاطئة كثيرة من هذه الشبكة. انتظر 15 دقيقة ثم حاول مرة أخرى.',
+  ADMIN_NOT_CONFIGURED: 'لم يُضبط رمز مرور المقدم بعد. راجع قسم ضبط رمز المرور في ملف README.',
+  PASSCODE_TOO_SHORT: 'يجب أن يكون رمز المرور الجديد من 10 إلى 72 حرفًا.',
+  BANK_NOT_READY: 'يحتاج بنك الأسئلة إلى 4 فصول في كل منها 5 أسئلة قبل إنشاء جلسة.',
+  QUESTION_IN_PROGRESS: 'اكشف إجابة السؤال الحالي أولًا.',
+  CHAPTER_COMPLETED: 'انتهى هذا الفصل. أعد تعيينه إذا أردت لعبه مرة أخرى.',
+  CHAPTER_NOT_FOUND: 'هذا الفصل ليس ضمن هذه الجلسة.',
+  CHAPTER_NOT_FINISHED: 'بعض أسئلة هذا الفصل لم تُعرض بعد.',
+  NO_ACTIVE_CHAPTER: 'ابدأ فصلًا أولًا.',
+  NO_MORE_QUESTIONS: 'عُرضت كل أسئلة هذا الفصل.',
+  INVALID_PHASE: 'هذه الخطوة لم تعد متاحة، وتم تحديث لوحة التحكم.',
+  CONFIRMATION_REQUIRED: 'اكتب كلمة التأكيد للمتابعة.',
+  SESSION_NOT_FOUND_OR_ENDED: 'انتهت هذه الجلسة.',
+  TITLE_TOO_LONG: 'استخدم 120 حرفًا أو أقل لعنوان الجلسة.',
+  UNKNOWN: 'حدث خطأ ما. حاول مرة أخرى.',
 };
 
 export class QuizError extends Error {
   constructor(code, detail) {
-    super(MESSAGES[code] || detail || code || 'Something went wrong.');
+    super(MESSAGES[code] || detail || code || 'حدث خطأ ما.');
     this.name = 'QuizError';
     this.code = code;
     this.detail = detail;
@@ -56,10 +57,11 @@ export function fromSupabaseError(error) {
   const idx = raw.indexOf(':');
   const head = (idx === -1 ? raw : raw.slice(0, idx)).trim();
   const tail = idx === -1 ? '' : raw.slice(idx + 1).trim();
-  if (head === 'BANK_INVALID') return new QuizError('BANK_INVALID', `The question bank was not imported: ${tail}.`);
-  if (head === 'INVALID_SETTING') return new QuizError('INVALID_SETTING', `That setting value is not allowed (${tail}).`);
+  // The database explains import problems in English; the technical detail is kept after an Arabic lead-in.
+  if (head === 'BANK_INVALID') return new QuizError('BANK_INVALID', `لم يُستورد بنك الأسئلة. التفاصيل: ${tail}`);
+  if (head === 'INVALID_SETTING') return new QuizError('INVALID_SETTING', `قيمة الإعداد غير مسموح بها (${tail}).`);
   if (/^[A-Z_]+$/.test(head)) return new QuizError(head, tail || undefined);
-  return new QuizError('UNKNOWN', raw || 'Something went wrong. Try again.');
+  return new QuizError('UNKNOWN');
 }
 
 export function messageFor(err) {

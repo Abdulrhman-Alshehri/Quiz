@@ -6,12 +6,12 @@
 // half_floor (optional): round(1000 * (1 - (elapsed / total) / 2))   500..1000
 export const SCORING_MODES = {
   linear: {
-    label: 'Speed counts fully (PRD default)',
-    summary: 'Correct answers earn up to 1,000 points, falling to 0 at the deadline.',
+    label: 'السرعة محسوبة بالكامل (الافتراضي)',
+    summary: 'الإجابة الصحيحة تكسب حتى 1,000 نقطة، وتنخفض حتى 0 عند انتهاء الوقت.',
   },
   half_floor: {
-    label: 'Knowledge first, speed as a bonus',
-    summary: 'Correct answers earn 500 to 1,000 points depending on speed.',
+    label: 'المعرفة أولًا والسرعة مكافأة',
+    summary: 'الإجابة الصحيحة تكسب من 500 إلى 1,000 نقطة حسب السرعة.',
   },
 };
 

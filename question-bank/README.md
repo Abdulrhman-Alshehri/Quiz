@@ -26,3 +26,5 @@ The questions live in the database, not in this repository. This repository is p
 ## Current bank (October 2026)
 
 20 questions written from `NPS_Orientation_Service_Advisors_EN_Draft.pptx` (Draft v0.1 for Academy review), five per chapter: Customer Data Platform, NPS 1.0 Measurement, NPS 2.0 Management, CX Microservices. The file with answers was handed over privately; review it with the Academy before the deck is approved, and re-import if the deck changes.
+
+Since 14 October 2026 the live bank is the Arabic version (`2026-10-14.2-ar`): same ids, same correct letters, Arabic text. Terms used: المروجون / المحايدون / المنتقدون (promoters / passives / detractors), السجل الذهبي (Golden Record), أمر العمل (job card), فحص مركبة العميل (CVI), اتفاقية الإصلاح الرقمية (DRA). Sessions created before the switch keep their English questions.

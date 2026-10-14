@@ -1,9 +1,9 @@
 # NPS Live Quiz
 
-A live, phone-based quiz with a leaderboard for the **service advisor NPS orientation workshop**. A presenter runs four chapters of five timed multiple-choice questions; advisors join by scanning a QR code and typing a name, with no accounts or passwords. The answer keys, deadlines and scoring all run in the database, so participants cannot see answers early or change their scores.
+A live, phone-based quiz with a leaderboard for the **service advisor NPS orientation workshop**. The whole site, the questions and the exports are in **Arabic** (right to left). A presenter runs four chapters of five timed multiple-choice questions; advisors join by scanning a QR code and typing a name, with no accounts or passwords. The answer keys, deadlines and scoring all run in the database, so participants cannot see answers early or change their scores.
 
 - **Frontend:** React 18 + Vite, plain CSS, hosted on GitHub Pages (static).
-- **Look and feel:** follows the NPS orientation deck: Almajdouie logo, brand blue `#134A9C` bands and section pages, light grey pages with white cards, and Calibri (Carlito, an open font with the same metrics, where Calibri is not installed). Styles are in `src/styles.css`; the logo is `src/assets/almajdouie-logo-white.png`.
+- **Look and feel:** follows the NPS orientation deck: Almajdouie logo, brand blue `#134A9C` bands and section pages, light grey pages with white cards. Latin letters and digits use Calibri (Carlito, an open font with the same metrics, where Calibri is not installed); Arabic uses IBM Plex Sans Arabic (open licence). Numbers stay in Western digits (0–9), as on the deck. Styles are in `src/styles.css`; the logo is `src/assets/almajdouie-logo-white.png`.
 - **Backend:** Supabase (Postgres, row-level security, database functions, Realtime).
 - **Live site:** https://abdulrhman-alshehri.github.io/Quiz/ (the path is case-sensitive: `/Quiz/`, not `/quiz/`).
 - **Permanent join link for slides:** https://abdulrhman-alshehri.github.io/Quiz/#/join (always opens the newest open session).
@@ -150,7 +150,7 @@ The browser test also accepts `ADMIN_TOKEN` instead of `ADMIN_PASSCODE`: a valid
 - **Free-plan Realtime limits:** 200 concurrent connections and 100 messages per second. Each state change sends one message to every screen, so above about 80 phones some updates may arrive by polling instead (1 to 4 seconds later). The 4-second lead-in absorbs that delay before answers open.
 - **Network.** Phones need internet access to `*.supabase.co` and `*.github.io`. Corporate Wi-Fi sometimes blocks these; mobile data is the fallback.
 - **One phone, one place.** A participant's place is saved in the phone's browser. Private browsing or clearing site data means joining again under a new name.
-- **English only.** The interface and questions are in English. Arabic names display correctly, but an Arabic interface is not built.
+- **Arabic only.** The interface, the question bank and the CSV headers are in Arabic. Join codes stay in Latin letters and digits so they are easy to type on any keyboard. Answer options show as أ ب ج د; their ids in the database stay A to D.
 
 ---
 

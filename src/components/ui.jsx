@@ -1,5 +1,5 @@
 // Small shared pieces.
-export function Spinner({ label = 'Loading' }) {
+export function Spinner({ label = 'جارٍ التحميل' }) {
   return (
     <div className="spinner" role="status">
       <span className="spinner__dot" aria-hidden="true" />
@@ -18,10 +18,10 @@ export function Notice({ tone = 'info', children, action }) {
 }
 
 const CONNECTION_TEXT = {
-  live: 'Live',
-  polling: 'Live (backup mode)',
-  connecting: 'Connecting',
-  offline: 'Reconnecting…',
+  live: 'متصل',
+  polling: 'متصل (وضع احتياطي)',
+  connecting: 'جارٍ الاتصال',
+  offline: 'جارٍ إعادة الاتصال…',
 };
 
 export function ConnectionBadge({ connection }) {
@@ -33,11 +33,11 @@ export function ConnectionBadge({ connection }) {
   );
 }
 
-/** The 0–10 recommendation scale: the emblem of this workshop's subject. */
+/** The 0–10 recommendation scale: the emblem of this workshop's subject. Kept left to right, as on the deck. */
 export function NpsScale() {
   const cells = Array.from({ length: 11 }, (_, i) => i);
   return (
-    <div className="nps-scale" aria-hidden="true">
+    <div className="nps-scale" dir="ltr" aria-hidden="true">
       {cells.map((n) => (
         <span key={n} className={`nps-scale__cell ${n <= 6 ? 'is-detractor' : n <= 8 ? 'is-passive' : 'is-promoter'}`}>
           {n}

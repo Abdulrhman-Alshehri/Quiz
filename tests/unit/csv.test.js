@@ -55,24 +55,25 @@ describe('result exports', () => {
 
   it('has every PRD column and per-chapter scores (0 for unplayed chapters)', () => {
     const [header, line] = resultsCsv(exported).trim().split('\r\n');
-    expect(header).toContain('Session ID');
-    expect(header).toContain('Participant ID');
-    expect(header).toContain('Display name');
-    expect(header).toContain('Chapter 1 points (Customer Data Platform)');
-    expect(header).toContain('"Chapter 2 points (NPS 1.0, Measurement)"');
-    expect(header).toContain('Overall points');
-    expect(header).toContain('Accuracy %');
-    expect(header).toContain('Completion status');
+    expect(header.startsWith('معرف الجلسة,')).toBe(true);
+    expect(header).toContain('معرف المشارك');
+    expect(header).toContain('الاسم');
+    expect(header).toContain('نقاط الفصل 1 (Customer Data Platform)');
+    expect(header).toContain('"نقاط الفصل 2 (NPS 1.0, Measurement)"');
+    expect(header).toContain('مجموع النقاط');
+    expect(header).toContain('الدقة %');
+    expect(header).toContain('حالة الإكمال');
+    expect(line).toContain('قيد التقدم');
     expect(line).toContain("'=Mona");
     expect(line).toContain('1700,0,1700');
     expect(line).toContain('4.32');
   });
 
-  it('item analysis lists option counts', () => {
+  it('item analysis lists option counts, with the Arabic option letter', () => {
     const csv = itemAnalysisCsv(
       [{ chapterOrder: 1, chapterTitle: 'CDP', questionOrder: 2, questionId: 'ch1-q2', questionText: 'When?', correctOptionId: 'D', played: true, answered: 10, correct: 7, timedOut: 1, pctCorrect: 63.6, optionA: 1, optionB: 1, optionC: 1, optionD: 7, avgResponseMs: 6000 }],
       { code: 'ABC234' },
     );
-    expect(csv.split('\r\n')[1]).toBe('ABC234,1. CDP,2,ch1-q2,When?,D,yes,10,7,63.6,1,1,1,1,7,6');
+    expect(csv.split('\r\n')[1]).toBe('ABC234,1. CDP,2,ch1-q2,When?,د,نعم,10,7,63.6,1,1,1,1,7,6');
   });
 });

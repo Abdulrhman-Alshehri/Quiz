@@ -11,7 +11,7 @@ import { QrCode } from '../components/QrCode';
 import { Leaderboard } from '../components/Leaderboard';
 import { Timer, timerState } from '../components/Timer';
 import { ConnectionBadge, Spinner } from '../components/ui';
-import { plural } from '../utils/format';
+import { count } from '../utils/format';
 
 // Projector view. It never receives the answer key before the reveal and shows
 // only the top of the leaderboard, so nobody is ranked last in front of the room.
@@ -44,10 +44,10 @@ export default function Screen({ code }) {
           {feed.error ? (
             <>
               <h1 className="screen__headline">{messageFor(feed.error)}</h1>
-              <p className="screen__sub">Check the session code in the presenter console.</p>
+              <p className="screen__sub">تحقق من رمز الجلسة في لوحة تحكم المقدم.</p>
             </>
           ) : (
-            <Spinner label="Connecting to the session…" />
+            <Spinner label="جارٍ الاتصال بالجلسة…" />
           )}
         </div>
       </main>
@@ -60,8 +60,8 @@ export default function Screen({ code }) {
   const anyPlayed = chapters.some((c) => c.status !== 'locked');
   const upcoming = chapters.find((c) => c.status !== 'completed');
   const questionBand = () => ({
-    title: `Chapter ${data.chapter?.order}: ${data.chapter?.title}`,
-    subtitle: `Question ${data.question.index} of ${data.question.total}`,
+    title: `الفصل ${data.chapter?.order}: ${data.chapter?.title}`,
+    subtitle: `السؤال ${data.question.index} من ${data.question.total}`,
   });
 
   let view;
@@ -76,7 +76,7 @@ export default function Screen({ code }) {
   } else if (session.phase === 'chapter_results' && data.chapter) {
     view = {
       heading: true,
-      title: `Chapter ${data.chapter.order} complete`,
+      title: `اكتمل الفصل ${data.chapter.order}`,
       subtitle: data.chapter.title,
       body: <StandingsBoard data={data} />,
     };
@@ -85,8 +85,8 @@ export default function Screen({ code }) {
   } else {
     view = {
       heading: true,
-      title: 'Leaderboard',
-      subtitle: upcoming ? `Up next: Chapter ${upcoming.order}, ${upcoming.title}` : 'Next chapter coming up',
+      title: 'لوحة الصدارة',
+      subtitle: upcoming ? `التالي: الفصل ${upcoming.order}، ${upcoming.title}` : 'الفصل التالي قريبًا',
       body: <StandingsBoard data={data} />,
     };
   }
@@ -103,23 +103,23 @@ export default function Screen({ code }) {
         <Logo />
         {view.title && (
           <div className="screen__heading">
-            <Title className="screen__title" dir="auto">{view.title}</Title>
-            {view.subtitle && <p className="screen__subtitle" dir="auto">{view.subtitle}</p>}
+            <Title className="screen__title">{view.title}</Title>
+            {view.subtitle && <p className="screen__subtitle">{view.subtitle}</p>}
           </div>
         )}
       </header>
       <div className="screen__body">{view.body}</div>
       <footer className="screen__foot">
         <span className="screen__foot-brand">
-          <span dir="auto">{session.title}</span> | {BRAND_FOOTER}
+          <bdi>{session.title}</bdi> | {BRAND_FOOTER}
         </span>
-        <span className="screen__people">{plural(data.participantCount, 'player', 'players')}</span>
+        <span className="screen__people">المشاركون: {data.participantCount}</span>
         <ConnectionBadge connection={feed.connection} />
       </footer>
       {showCornerQr && (
-        <aside className="screen__corner" aria-label="Late joiners">
-          <p className="screen__corner-label">Join late? Scan</p>
-          <QrCode value={url} size={112} label="QR code to join this quiz" />
+        <aside className="screen__corner" aria-label="للمنضمين متأخرين">
+          <p className="screen__corner-label">تأخرت؟ امسح للانضمام</p>
+          <QrCode value={url} size={112} label="رمز QR للانضمام إلى هذه المسابقة" />
           <Plate code={session.code} size="xs" />
         </aside>
       )}
@@ -133,42 +133,46 @@ function Lobby({ data, url, upcoming }) {
   return (
     <section className="lobby">
       <div className="lobby__join">
-        <h1 className="screen__headline">Quiz time</h1>
-        <p className="screen__sub" dir="auto">
-          {upcoming ? `Chapter ${upcoming.order}: ${upcoming.title}` : data.session.title}
+        <h1 className="screen__headline">وقت المسابقة</h1>
+        <p className="screen__sub">
+          {upcoming ? `الفصل ${upcoming.order}: ${upcoming.title}` : <bdi>{data.session.title}</bdi>}
         </p>
         <ol className="steps-list lobby__steps">
           <li>
             <span className="step-num" aria-hidden="true">1</span>
-            <span>Scan the QR code with your phone</span>
+            <span>امسح رمز QR بجوالك</span>
           </li>
           <li>
             <span className="step-num" aria-hidden="true">2</span>
-            <span>Enter your name and join</span>
+            <span>اكتب اسمك وانضم</span>
           </li>
           <li>
             <span className="step-num" aria-hidden="true">3</span>
-            <span>Answer on your phone before the timer runs out: faster correct answers earn more points</span>
+            <span>أجب من جوالك قبل انتهاء الوقت: الإجابة الصحيحة الأسرع تكسب نقاطًا أكثر</span>
           </li>
         </ol>
-        <p className="lobby__note">No account needed: scan, enter your name and play.</p>
+        <p className="lobby__note">لا حاجة إلى حساب: امسح الرمز واكتب اسمك وابدأ.</p>
       </div>
       <div className="lobby__card">
         <div className="lobby__qr">
-          <QrCode value={url} size={440} fluid label="QR code to join this quiz" />
+          <QrCode value={url} size={440} fluid label="رمز QR للانضمام إلى هذه المسابقة" />
         </div>
-        <h2 className="lobby__card-title">Scan to join</h2>
-        <p className="lobby__url">or go to {site}</p>
-        <Plate code={data.session.code} size="l" caption="Join code" />
+        <h2 className="lobby__card-title">امسح للانضمام</h2>
+        <p className="lobby__url">
+          أو افتح <bdi dir="ltr">{site}</bdi>
+        </p>
+        <Plate code={data.session.code} size="l" caption="رمز الانضمام" />
       </div>
       <div className="lobby__people">
         <p className="lobby__count">
-          <strong>{data.participantCount}</strong> {data.participantCount === 1 ? 'person has' : 'people have'} joined
+          عدد المنضمين <strong>{data.participantCount}</strong>
         </p>
         {names.length > 0 && (
-          <ul className="lobby__names" aria-label="First people to join">
+          <ul className="lobby__names" aria-label="أول المنضمين">
             {names.map((n) => (
-              <li key={n} dir="auto">{n}</li>
+              <li key={n}>
+                <bdi>{n}</bdi>
+              </li>
             ))}
             {data.participantCount > names.length && <li className="lobby__more">+{data.participantCount - names.length}</li>}
           </ul>
@@ -186,12 +190,12 @@ function ChapterBoard({ data }) {
         {String(c.order).padStart(2, '0')}
       </p>
       <h1 className="chapter-board__title">
-        <span className="sr-only">Chapter {c.order}: </span>
+        <span className="sr-only">الفصل {c.order}: </span>
         {c.title}
       </h1>
-      {c.description && <p className="screen__sub" dir="auto">{c.description}</p>}
+      {c.description && <p className="screen__sub">{c.description}</p>}
       <p className="chapter-board__rules">
-        {plural(c.questionCount, 'question', 'questions')}. Read the question, then answer on your phone before the timer runs out.
+        {count(c.questionCount, 'question')}. اقرأ السؤال، ثم أجب من جوالك قبل انتهاء الوقت.
       </p>
     </section>
   );
@@ -203,16 +207,16 @@ function QuestionBoard({ data, now }) {
   return (
     <section className="qboard">
       <div className="qboard__main">
-        <h1 className="qboard__text" dir="auto">{q.text}</h1>
+        <h1 className="qboard__text">{q.text}</h1>
         <div className="qboard__side">
           <Timer question={q} now={now} size="l" />
           <p className="qboard__answered">
-            <strong>{q.answeredCount}</strong> of {data.participantCount} answered
+            <strong>{q.answeredCount}</strong> من {data.participantCount} أجابوا
           </p>
         </div>
       </div>
       {t.phase === 'leadin' ? (
-        <p className="qboard__ready">Answers open in {Math.ceil(t.leadIn / 1000)}…</p>
+        <p className="qboard__ready">تفتح الإجابات خلال {Math.ceil(t.leadIn / 1000)}…</p>
       ) : (
         <div className="tiles">
           {q.options.map((o) => (
@@ -231,10 +235,10 @@ function RevealBoard({ data }) {
   return (
     <section className="qboard qboard--reveal">
       <div className="qboard__main">
-        <h1 className="qboard__text" dir="auto">{q.text}</h1>
+        <h1 className="qboard__text">{q.text}</h1>
         <div className="qboard__side">
           <p className="qboard__score">
-            <strong>{r.correctCount}</strong> of {data.participantCount} got it right
+            <strong>{r.correctCount}</strong> من {data.participantCount} أجابوا إجابة صحيحة
           </p>
         </div>
       </div>
@@ -251,8 +255,8 @@ function RevealBoard({ data }) {
         ))}
       </div>
       {r.explanation && (
-        <p className="qboard__why" dir="auto">
-          <span className="reveal__why-label">Why</span>
+        <p className="qboard__why">
+          <span className="reveal__why-label">التوضيح</span>
           {r.explanation}
         </p>
       )}
@@ -275,20 +279,22 @@ function FinalBoard({ data }) {
   const order = [podium[1], podium[0], podium[2]].filter(Boolean);
   return (
     <section className="final-board">
-      <h1 className="screen__headline">Final results</h1>
-      <p className="screen__sub">Thank you for playing</p>
+      <h1 className="screen__headline">النتائج النهائية</h1>
+      <p className="screen__sub">شكرًا لمشاركتكم</p>
       {podium.length > 0 ? (
-        <ol className="podium" aria-label="Top three">
+        <ol className="podium" aria-label="المراكز الثلاثة الأولى">
           {order.map((r) => (
             <li key={r.rank} className={`podium__place podium__place--${r.rank}`}>
-              <span className="podium__name" dir="auto">{r.displayName}</span>
+              <span className="podium__name">
+                <bdi>{r.displayName}</bdi>
+              </span>
               <span className="podium__pts">{r.totalPoints.toLocaleString('en-US')}</span>
               <span className="podium__step">{r.rank}</span>
             </li>
           ))}
         </ol>
       ) : (
-        <p className="screen__sub">No answers were recorded in this session.</p>
+        <p className="screen__sub">لم تُسجل أي إجابات في هذه الجلسة.</p>
       )}
       {rest.length > 0 && <Leaderboard rows={rest} total={Math.max(0, data.participantCount - 3)} compact />}
     </section>

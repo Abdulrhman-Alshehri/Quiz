@@ -78,7 +78,7 @@ export default function Join({ query }) {
   if (lookup === 'loading') {
     return (
       <BluePage className="join-page">
-        <Spinner label="Finding the live quiz…" />
+        <Spinner label="جارٍ البحث عن المسابقة…" />
       </BluePage>
     );
   }
@@ -86,14 +86,15 @@ export default function Join({ query }) {
   if (lookup === 'missing') {
     return (
       <BluePage className="join-page">
-        <h1 className="h1">Join the quiz</h1>
-        <p className="lead">Type the join code shown under the QR code on the big screen.</p>
+        <h1 className="h1">انضم إلى المسابقة</h1>
+        <p className="lead">اكتب رمز الانضمام الظاهر تحت رمز QR على الشاشة الكبيرة.</p>
         <form className="card join-card" onSubmit={submitCode}>
           {error && <Notice tone="error">{messageFor(error)}</Notice>}
           <label className="field">
-            <span className="field__label">Join code</span>
+            <span className="field__label">رمز الانضمام</span>
             <input
               className="input input--plate"
+              dir="ltr"
               value={codeInput}
               onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
               maxLength={8}
@@ -105,7 +106,7 @@ export default function Join({ query }) {
             />
           </label>
           <button className="btn btn--primary btn--block btn--xl" type="submit">
-            Find quiz
+            ابحث عن المسابقة
           </button>
         </form>
       </BluePage>
@@ -116,17 +117,21 @@ export default function Join({ query }) {
 
   return (
     <BluePage className="join-page">
-      <p className="join__kicker">You are joining</p>
-      <h1 className="h1" dir="auto">{session.title}</h1>
+      <p className="join__kicker">أنت تنضم إلى</p>
+      <h1 className="h1">
+        <bdi>{session.title}</bdi>
+      </h1>
       <Plate code={session.code} size="s" />
 
       <div className="card join-card">
         {seat && (
           <section className="join__resume" aria-labelledby="resume-title">
-            <h2 id="resume-title" className="h3">Welcome back, <span dir="auto">{seat.displayName}</span></h2>
-            <p className="muted">This phone already has a place in this quiz. Your answers are saved.</p>
+            <h2 id="resume-title" className="h3">
+              مرحبًا بعودتك، <bdi>{seat.displayName}</bdi>
+            </h2>
+            <p className="muted">لهذا الجوال مكان محفوظ في هذه المسابقة، وإجاباتك محفوظة.</p>
             <button className="btn btn--primary btn--block btn--xl" type="button" onClick={() => navigate(`/play?s=${seat.sessionId}`)}>
-              Continue as {seat.displayName}
+              تابع باسم <bdi>{seat.displayName}</bdi>
             </button>
             <button
               className="btn btn--quiet btn--block"
@@ -136,20 +141,20 @@ export default function Join({ query }) {
                 setSeat(null);
               }}
             >
-              Join with a different name
+              انضم باسم آخر
             </button>
           </section>
         )}
 
-        {!seat && session.status === 'ended' && <Notice tone="info">This quiz has ended. Thanks for taking part.</Notice>}
+        {!seat && session.status === 'ended' && <Notice tone="info">انتهت هذه المسابقة. شكرًا لمشاركتك.</Notice>}
         {!seat && session.status !== 'ended' && !session.registrationOpen && (
-          <Notice tone="info">Joining is closed right now. Ask the presenter to reopen it.</Notice>
+          <Notice tone="info">الانضمام مغلق الآن. اطلب من المقدم إعادة فتحه.</Notice>
         )}
 
         {!seat && !closed && (
           <form className="stack" onSubmit={join} noValidate>
             <label className="field">
-              <span className="field__label">Your name, as you want it on the leaderboard</span>
+              <span className="field__label">اسمك كما تريده أن يظهر في لوحة الصدارة</span>
               <input
                 className="input input--big"
                 value={name}
@@ -162,12 +167,12 @@ export default function Join({ query }) {
                 aria-invalid={error ? 'true' : 'false'}
               />
               <span id="name-help" className="field__help">
-                Up to {NAME_MAX} characters. Everyone in the room will see it.
+                حتى {NAME_MAX} حرفًا. سيراه جميع الحاضرين.
               </span>
             </label>
             {error && <Notice tone="error">{messageFor(error)}</Notice>}
             <button className="btn btn--primary btn--block btn--xl" type="submit" disabled={busy}>
-              {busy ? 'Joining…' : 'Join quiz'}
+              {busy ? 'جارٍ الانضمام…' : 'انضم الآن'}
             </button>
           </form>
         )}

@@ -1,6 +1,8 @@
-// Answer options: white cards with a coloured badge holding a shape and a
-// letter, so nothing relies on colour alone. Red and green are kept for
-// right/wrong feedback only.
+import { count, optionLetter } from '../utils/format';
+
+// Answer options: white cards with a coloured badge holding a shape and an
+// Arabic letter (أ ب ج د), so nothing relies on colour alone. Ids stay A-D in
+// the database. Red and green are kept for right/wrong feedback only.
 const SHAPE_PATHS = {
   A: <path d="M12 3 L22 20 H2 Z" />,
   B: <path d="M12 2 L22 12 L12 22 L2 12 Z" />,
@@ -17,29 +19,30 @@ export function Shape({ id, className = '' }) {
 }
 
 const STATE_SUFFIX = {
-  selected: ' (your answer)',
-  correct: ' (correct answer)',
-  wrong: ' (your answer, not correct)',
-  'correct-mine': ' (your answer, correct)',
+  selected: ' (إجابتك)',
+  correct: ' (الإجابة الصحيحة)',
+  wrong: ' (إجابتك، غير صحيحة)',
+  'correct-mine': ' (إجابتك، صحيحة)',
 };
 
 /** Participant answer button. state: idle | selected | other | correct | correct-mine | wrong | dim */
 export function OptionButton({ option, state = 'idle', disabled, onSelect, hotkey }) {
+  const letter = optionLetter(option.id);
   return (
     <button
       type="button"
       className={`opt opt--${option.id.toLowerCase()} is-${state}`}
       disabled={disabled}
       aria-pressed={state === 'selected' || state === 'correct-mine' || state === 'wrong'}
-      aria-label={`${option.id}: ${option.text}${STATE_SUFFIX[state] || ''}`}
+      aria-label={`${letter}: ${option.text}${STATE_SUFFIX[state] || ''}`}
       onClick={() => onSelect && onSelect(option.id)}
       data-option={option.id}
     >
       <span className="opt__mark" aria-hidden="true">
         <Shape id={option.id} />
-        <span className="opt__letter">{option.id}</span>
+        <span className="opt__letter">{letter}</span>
       </span>
-      <span className="opt__text" dir="auto">{option.text}</span>
+      <span className="opt__text">{option.text}</span>
       {(state === 'correct' || state === 'correct-mine') && <span className="opt__flag" aria-hidden="true">✓</span>}
       {state === 'wrong' && <span className="opt__flag" aria-hidden="true">✕</span>}
       {hotkey && <span className="opt__key" aria-hidden="true">{hotkey}</span>}
@@ -48,22 +51,23 @@ export function OptionButton({ option, state = 'idle', disabled, onSelect, hotke
 }
 
 /** Big-screen tile. While open: no hint of the answer. At reveal: correct tile marked, counts shown. */
-export function OptionTile({ option, revealed, correct, count, total }) {
-  const share = total > 0 ? Math.round((100 * (count || 0)) / total) : 0;
+export function OptionTile({ option, revealed, correct, count: n, total }) {
+  const share = total > 0 ? Math.round((100 * (n || 0)) / total) : 0;
+  const letter = optionLetter(option.id);
   return (
     <div
       className={`tile tile--${option.id.toLowerCase()} ${revealed ? (correct ? 'is-correct' : 'is-dim') : ''}`}
-      aria-label={`${option.id}: ${option.text}${revealed ? `${correct ? ', correct answer' : ''}, ${count || 0} answers` : ''}`}
+      aria-label={`${letter}: ${option.text}${revealed ? `${correct ? '، الإجابة الصحيحة' : ''}، ${count(n || 0, 'answer')}` : ''}`}
     >
       <span className="tile__mark" aria-hidden="true">
         <Shape id={option.id} />
-        <span className="tile__letter">{option.id}</span>
+        <span className="tile__letter">{letter}</span>
       </span>
-      <span className="tile__text" dir="auto">{option.text}</span>
+      <span className="tile__text">{option.text}</span>
       {revealed && (
         <span className="tile__count">
           {correct && <span className="tile__check" aria-hidden="true">✓</span>}
-          <strong>{count || 0}</strong>
+          <strong>{n || 0}</strong>
           <span className="tile__bar" aria-hidden="true">
             <span style={{ width: `${share}%` }} />
           </span>

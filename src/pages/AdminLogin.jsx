@@ -31,13 +31,14 @@ export default function AdminLogin({ onSignedIn, reason }) {
   return (
     <BluePage className="admin--login">
       <form className="card login" onSubmit={submit}>
-        <h1 className="h2">Presenter sign-in</h1>
-        <p className="muted">Enter the presenter passcode to run sessions, see results and download reports.</p>
+        <h1 className="h2">دخول المقدم</h1>
+        <p className="muted">اكتب رمز مرور المقدم لإدارة الجلسات ومشاهدة النتائج وتنزيل التقارير.</p>
         {reason && <Notice tone="info">{reason}</Notice>}
         <label className="field">
-          <span className="field__label">Passcode</span>
+          <span className="field__label">رمز المرور</span>
           <input
             className="input"
+            dir="ltr"
             type="password"
             value={passcode}
             onChange={(e) => setPasscode(e.target.value)}
@@ -47,10 +48,10 @@ export default function AdminLogin({ onSignedIn, reason }) {
         </label>
         {error && <Notice tone="error">{messageFor(error)}</Notice>}
         <button className="btn btn--primary btn--block" type="submit" disabled={busy || !passcode}>
-          {busy ? 'Signing in…' : 'Sign in'}
+          {busy ? 'جارٍ الدخول…' : 'دخول'}
         </button>
-        <p className="muted small">Sign-in lasts 12 hours on this browser. Sign out when you use a shared laptop.</p>
-        <a className="link" href="#/">Back to the start page</a>
+        <p className="muted small">يبقى الدخول 12 ساعة على هذا المتصفح. سجل الخروج إذا كان الجهاز مشتركًا.</p>
+        <a className="link" href="#/">العودة إلى الصفحة الرئيسية</a>
       </form>
     </BluePage>
   );

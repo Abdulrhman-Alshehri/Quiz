@@ -4,7 +4,7 @@ import { messageFor } from '../lib/errors';
 import { navigate } from '../lib/router';
 import { useAdminToken } from '../lib/useAdmin';
 import { downloadJson } from '../utils/csv';
-import { dateTime, fileStamp, plural } from '../utils/format';
+import { count, dateTime, fileStamp, longDate, optionLetter } from '../utils/format';
 import { SCORING_MODES } from '../utils/scoring';
 import { Logo } from '../components/Brand';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -54,10 +54,10 @@ function Dashboard({ token, onSignOut }) {
     <main className="admin">
       <header className="admin__bar on-blue">
         <Logo />
-        <a className="admin__brand" href="#/admin">NPS Live Quiz</a>
-        <span className="admin__where">Presenter console</span>
+        <a className="admin__brand" href="#/admin">مسابقة NPS المباشرة</a>
+        <span className="admin__where">لوحة تحكم المقدم</span>
         <button className="btn btn--quiet" type="button" onClick={signOut}>
-          Sign out
+          تسجيل الخروج
         </button>
       </header>
       <div className="admin__grid">
@@ -65,9 +65,9 @@ function Dashboard({ token, onSignOut }) {
           {error && <Notice tone="error">{messageFor(error)}</Notice>}
           <NewSession token={token} onError={handle} />
           <section className="card" aria-labelledby="sessions-title">
-            <h2 id="sessions-title" className="h3">Sessions</h2>
-            {!sessions && <Spinner label="Loading sessions…" />}
-            {sessions && current.length === 0 && <p className="muted">No open sessions. Create one above.</p>}
+            <h2 id="sessions-title" className="h3">الجلسات</h2>
+            {!sessions && <Spinner label="جارٍ تحميل الجلسات…" />}
+            {sessions && current.length === 0 && <p className="muted">لا توجد جلسات مفتوحة. أنشئ جلسة من النموذج أعلاه.</p>}
             <ul className="session-list">
               {current.map((s) => (
                 <SessionRow key={s.id} s={s} />
@@ -75,15 +75,15 @@ function Dashboard({ token, onSignOut }) {
             </ul>
             {past.length > 0 && (
               <details className="past">
-                <summary>Ended sessions ({past.length})</summary>
+                <summary>الجلسات المنتهية ({past.length})</summary>
                 <ul className="session-list">
                   {past.map((s) => (
                     <SessionRow key={s.id} s={s} />
                   ))}
                 </ul>
                 <p className="muted small">
-                  Ended sessions keep their results for export. To remove a session completely, delete its row in the
-                  Supabase dashboard (Table Editor, sessions); its participants and answers are removed with it.
+                  تحتفظ الجلسات المنتهية بنتائجها للتصدير. لحذف جلسة نهائيًا، احذف صفها من لوحة Supabase (Table Editor ثم
+                  sessions)، وتُحذف معها مشاركاتها وإجاباتها.
                 </p>
               </details>
             )}
@@ -103,24 +103,23 @@ function SessionRow({ s }) {
     <li className="session-row">
       <Plate code={s.code} size="xs" />
       <div className="session-row__info">
-        <a className="session-row__title" href={`#/admin/session/${s.id}`} dir="auto">
-          {s.title}
+        <a className="session-row__title" href={`#/admin/session/${s.id}`}>
+          <bdi>{s.title}</bdi>
         </a>
         <span className="muted small">
-          {dateTime(s.createdAt)}. {plural(s.participants, 'participant', 'participants')}.{' '}
-          {s.status === 'ended' ? 'Ended' : s.status === 'live' ? 'Live' : 'Not started'}
+          {dateTime(s.createdAt)} · المشاركون: {s.participants} ·{' '}
+          {s.status === 'ended' ? 'منتهية' : s.status === 'live' ? 'جارية' : 'لم تبدأ'}
         </span>
       </div>
       <a className="btn btn--outline btn--s" href={`#/admin/session/${s.id}`}>
-        Open
+        فتح
       </a>
     </li>
   );
 }
 
 function NewSession({ token, onError }) {
-  const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  const [title, setTitle] = useState(`NPS orientation, ${today}`);
+  const [title, setTitle] = useState(`ورشة تعريف NPS، ${longDate()}`);
   const [seconds, setSeconds] = useState(20);
   const [scoring, setScoring] = useState('linear');
   const [feedback, setFeedback] = useState('on_reveal');
@@ -150,16 +149,16 @@ function NewSession({ token, onError }) {
 
   return (
     <section className="card" aria-labelledby="new-title">
-      <h2 id="new-title" className="h3">New session</h2>
-      <p className="muted small">Each session gets its own join code and keeps its results separate.</p>
+      <h2 id="new-title" className="h3">جلسة جديدة</h2>
+      <p className="muted small">لكل جلسة رمز انضمام خاص بها، ونتائجها منفصلة عن غيرها.</p>
       <form className="stack" onSubmit={create}>
         <label className="field">
-          <span className="field__label">Title shown on the big screen</span>
+          <span className="field__label">العنوان على الشاشة الكبيرة</span>
           <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required />
         </label>
         <div className="row">
           <label className="field">
-            <span className="field__label">Seconds per question</span>
+            <span className="field__label">عدد الثواني لكل سؤال</span>
             <input
               className="input"
               type="number"
@@ -171,15 +170,15 @@ function NewSession({ token, onError }) {
             />
           </label>
           <label className="field">
-            <span className="field__label">Show right or wrong</span>
+            <span className="field__label">إظهار الصواب والخطأ</span>
             <select className="input" value={feedback} onChange={(e) => setFeedback(e.target.value)}>
-              <option value="on_reveal">At the reveal (recommended)</option>
-              <option value="immediate">Right after each answer</option>
+              <option value="on_reveal">عند كشف الإجابة (موصى به)</option>
+              <option value="immediate">فور كل إجابة</option>
             </select>
           </label>
         </div>
         <fieldset className="field">
-          <legend className="field__label">Scoring</legend>
+          <legend className="field__label">طريقة احتساب النقاط</legend>
           {Object.entries(SCORING_MODES).map(([value, m]) => (
             <label key={value} className="choice">
               <input type="radio" name="scoring" value={value} checked={scoring === value} onChange={() => setScoring(value)} />
@@ -192,13 +191,13 @@ function NewSession({ token, onError }) {
         <label className="choice">
           <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
           <span>
-            <strong>Run questions automatically.</strong> Reveal when time is up and move on after a short pause. You can switch
-            this on or off during the session.
+            <strong>تشغيل الأسئلة تلقائيًا.</strong> تُكشف الإجابة عند انتهاء الوقت، ثم ينتقل إلى السؤال التالي بعد مهلة قصيرة.
+            يمكنك تشغيله أو إيقافه أثناء الجلسة.
           </span>
         </label>
         {error && <Notice tone="error">{messageFor(error)}</Notice>}
         <button className="btn btn--primary" type="submit" disabled={busy}>
-          {busy ? 'Creating…' : 'Create session'}
+          {busy ? 'جارٍ الإنشاء…' : 'إنشاء الجلسة'}
         </button>
       </form>
     </section>
@@ -232,7 +231,7 @@ function BankPanel({ token, onError }) {
       const questions = chapters.reduce((n, c) => n + (Array.isArray(c.questions) ? c.questions.length : 0), 0);
       setPreview({ name: file.name, data: parsed, chapters: chapters.length, questions });
     } catch {
-      setError(new Error('That file is not valid JSON. Export the current bank to see the expected format.'));
+      setError(new Error('هذا الملف ليس بصيغة JSON صالحة. نزّل البنك الحالي لترى الصيغة المطلوبة.'));
     }
   };
 
@@ -255,26 +254,24 @@ function BankPanel({ token, onError }) {
   const total = bank ? bank.chapters.reduce((n, c) => n + c.questions.length, 0) : 0;
   return (
     <section className="card" aria-labelledby="bank-title">
-      <h2 id="bank-title" className="h3">Question bank</h2>
-      <p className="muted small">
-        New sessions copy these questions. Sessions that already exist keep the questions they started with.
-      </p>
-      {!bank && <Spinner label="Loading questions…" />}
+      <h2 id="bank-title" className="h3">بنك الأسئلة</h2>
+      <p className="muted small">الجلسات الجديدة تنسخ هذه الأسئلة، والجلسات الموجودة تحتفظ بالأسئلة التي بدأت بها.</p>
+      {!bank && <Spinner label="جارٍ تحميل الأسئلة…" />}
       {bank && (
         <ol className="bank">
           {bank.chapters.map((c) => (
             <li key={c.id}>
               <details>
                 <summary>
-                  <strong>{c.title}</strong> <span className="muted">({plural(c.questions.length, 'question', 'questions')})</span>
+                  <strong>{c.title}</strong> <span className="muted">({count(c.questions.length, 'question')})</span>
                 </summary>
                 <ol className="bank__qs">
                   {c.questions.map((q) => (
                     <li key={q.id}>
-                      <span dir="auto">{q.text}</span>
+                      <span>{q.text}</span>
                       <span className="muted small">
                         {' '}
-                        Answer {q.correctOptionId}, {q.durationSeconds} s{q.sourceRef ? `, ${q.sourceRef}` : ''}
+                        الإجابة {optionLetter(q.correctOptionId)}، {q.durationSeconds} ث{q.sourceRef ? `، ${q.sourceRef}` : ''}
                       </span>
                     </li>
                   ))}
@@ -286,8 +283,8 @@ function BankPanel({ token, onError }) {
       )}
       {bank && (
         <p className="muted small">
-          {plural(bank.chapters.length, 'chapter', 'chapters')}, {plural(total, 'question', 'questions')}. A session needs exactly 4
-          chapters with 5 questions each.
+          {count(bank.chapters.length, 'chapter')}، {count(total, 'question')}. تحتاج الجلسة إلى 4 فصول بالضبط، في كل منها 5
+          أسئلة.
         </p>
       )}
       <div className="btn-row">
@@ -297,25 +294,25 @@ function BankPanel({ token, onError }) {
           disabled={!bank}
           onClick={() => downloadJson(`question-bank-${fileStamp()}.private.json`, bank)}
         >
-          Download bank (JSON)
+          تنزيل البنك (JSON)
         </button>
         <button className="btn btn--outline btn--s" type="button" onClick={() => fileRef.current && fileRef.current.click()}>
-          Import a new bank
+          استيراد بنك جديد
         </button>
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={pick} />
       </div>
-      <p className="muted small">The download contains the answer key. Keep it out of shared folders and the public repository.</p>
+      <p className="muted small">الملف المنزّل يحتوي على الإجابات الصحيحة. احفظه بعيدًا عن المجلدات المشتركة والمستودع العام.</p>
       {result && (
         <Notice tone="success">
-          Imported {plural(result.questions, 'question', 'questions')}.{' '}
-          {result.retiredQuestions ? `${plural(result.retiredQuestions, 'old question was', 'old questions were')} retired and kept in history.` : ''}
+          تم استيراد {count(result.questions, 'question')}.{' '}
+          {result.retiredQuestions ? `الأسئلة القديمة الموقوفة: ${result.retiredQuestions}، وهي محفوظة في السجل.` : ''}
         </Notice>
       )}
       {error && <Notice tone="error">{messageFor(error)}</Notice>}
       <ConfirmDialog
         open={!!preview}
-        title="Replace the question bank?"
-        confirmLabel="Import questions"
+        title="استبدال بنك الأسئلة؟"
+        confirmLabel="استيراد الأسئلة"
         tone="primary"
         busy={importing}
         onConfirm={doImport}
@@ -323,9 +320,8 @@ function BankPanel({ token, onError }) {
       >
         {preview && (
           <p>
-            <strong>{preview.name}</strong> has {plural(preview.chapters, 'chapter', 'chapters')} and{' '}
-            {plural(preview.questions, 'question', 'questions')}. Questions not in this file are retired, not deleted. Sessions that
-            already exist are not changed.
+            يحتوي الملف <bdi>{preview.name}</bdi> على {count(preview.chapters, 'chapter')} و{count(preview.questions, 'question')}.
+            الأسئلة غير الموجودة فيه تُوقف ولا تُحذف، والجلسات الموجودة لا تتغير.
           </p>
         )}
       </ConfirmDialog>
@@ -344,13 +340,13 @@ function PasscodePanel({ token, onError }) {
     e.preventDefault();
     setMsg(null);
     if (next !== again) {
-      setMsg({ tone: 'error', text: 'The two new passcodes do not match.' });
+      setMsg({ tone: 'error', text: 'رمزا المرور الجديدان غير متطابقين.' });
       return;
     }
     setBusy(true);
     try {
       await api.admin.changePasscode(token, current, next);
-      setMsg({ tone: 'success', text: 'Passcode changed. Other devices have been signed out.' });
+      setMsg({ tone: 'success', text: 'تم تغيير رمز المرور، وتم تسجيل خروج الأجهزة الأخرى.' });
       setCurrent('');
       setNext('');
       setAgain('');
@@ -364,25 +360,25 @@ function PasscodePanel({ token, onError }) {
 
   return (
     <section className="card" aria-labelledby="pass-title">
-      <h2 id="pass-title" className="h3">Presenter passcode</h2>
+      <h2 id="pass-title" className="h3">رمز مرور المقدم</h2>
       <details>
-        <summary>Change the passcode</summary>
+        <summary>تغيير رمز المرور</summary>
         <form className="stack" onSubmit={submit}>
           <label className="field">
-            <span className="field__label">Current passcode</span>
-            <input className="input" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
+            <span className="field__label">رمز المرور الحالي</span>
+            <input className="input" dir="ltr" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
           </label>
           <label className="field">
-            <span className="field__label">New passcode (10 to 72 characters)</span>
-            <input className="input" type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" minLength={10} maxLength={72} required />
+            <span className="field__label">رمز المرور الجديد (من 10 إلى 72 حرفًا)</span>
+            <input className="input" dir="ltr" type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" minLength={10} maxLength={72} required />
           </label>
           <label className="field">
-            <span className="field__label">New passcode again</span>
-            <input className="input" type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" required />
+            <span className="field__label">أعد كتابة رمز المرور الجديد</span>
+            <input className="input" dir="ltr" type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" required />
           </label>
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
           <button className="btn btn--outline" type="submit" disabled={busy}>
-            {busy ? 'Saving…' : 'Change passcode'}
+            {busy ? 'جارٍ الحفظ…' : 'تغيير رمز المرور'}
           </button>
         </form>
       </details>

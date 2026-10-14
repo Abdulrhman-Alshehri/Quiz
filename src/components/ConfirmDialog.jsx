@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
+// Arabic keyboards give two forms of some letters; compare the typed word loosely.
+const normalize = (text) => String(text || '').trim().replace(/ى/g, 'ي').replace(/[أإآ]/g, 'ا');
+
 /** Modal confirmation for anything that changes results. Optionally asks for a typed word. */
 export function ConfirmDialog({ open, title, children, confirmLabel, requireText, tone = 'danger', busy, onConfirm, onCancel }) {
   const ref = useRef(null);
@@ -18,7 +21,7 @@ export function ConfirmDialog({ open, title, children, confirmLabel, requireText
     }
   }, [open]);
 
-  const ready = !requireText || typed.trim() === requireText;
+  const ready = !requireText || normalize(typed) === normalize(requireText);
   return (
     <dialog
       ref={ref}
@@ -40,23 +43,22 @@ export function ConfirmDialog({ open, title, children, confirmLabel, requireText
         <div className="dialog__body">{children}</div>
         {requireText && (
           <label className="field">
-            <span className="field__label">Type {requireText} to confirm</span>
+            <span className="field__label">اكتب «{requireText}» للتأكيد</span>
             <input
               className="input"
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
               autoComplete="off"
-              autoCapitalize="characters"
               spellCheck={false}
             />
           </label>
         )}
         <div className="dialog__actions">
           <button type="button" className="btn btn--quiet" onClick={onCancel} disabled={busy}>
-            Cancel
+            إلغاء
           </button>
           <button type="submit" className={`btn ${tone === 'danger' ? 'btn--danger' : 'btn--primary'}`} disabled={!ready || busy}>
-            {busy ? 'Working…' : confirmLabel}
+            {busy ? 'جارٍ التنفيذ…' : confirmLabel}
           </button>
         </div>
       </form>

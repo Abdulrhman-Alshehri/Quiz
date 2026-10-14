@@ -7,7 +7,7 @@ import { joinUrl, screenUrl } from '../lib/router';
 import { useAdminToken } from '../lib/useAdmin';
 import { downloadCsv } from '../utils/csv';
 import { itemAnalysisCsv, resultsCsv } from '../utils/exports';
-import { fileStamp, percent, plural, points, seconds } from '../utils/format';
+import { count, fileStamp, optionLetter, percent, points, seconds } from '../utils/format';
 import { SCORING_MODES } from '../utils/scoring';
 import { Logo } from '../components/Brand';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -18,9 +18,12 @@ import { Timer } from '../components/Timer';
 import { ConnectionBadge, Notice, Spinner } from '../components/ui';
 import AdminLogin from './AdminLogin';
 
+// Typed before a reset. The database still receives its own fixed confirmation value.
+const CONFIRM_WORD = 'تصفير';
+
 export default function AdminSession({ sessionId }) {
   const { admin, signIn, signOut } = useAdminToken();
-  if (!admin) return <AdminLogin onSignedIn={signIn} reason="Sign in to open this session's console." />;
+  if (!admin) return <AdminLogin onSignedIn={signIn} reason="سجل الدخول لفتح لوحة تحكم هذه الجلسة." />;
   return <Console token={admin.token} sessionId={sessionId} onSignOut={signOut} />;
 }
 
@@ -31,42 +34,42 @@ function nextAction(data, now) {
   const active = data.chapters.find((c) => c.id === s.activeChapterId);
   if (s.phase === 'question' && data.question) {
     const over = now > parseTs(data.question.deadline) + (s.settings.graceMs ?? 1000);
-    return { kind: 'reveal', label: over ? 'Reveal the answer' : 'Close and reveal now', strong: over };
+    return { kind: 'reveal', label: over ? 'اكشف الإجابة' : 'أغلق السؤال واكشف الإجابة الآن', strong: over };
   }
   if (s.phase === 'chapter_intro' && active) {
-    return { kind: 'next', label: `Show question ${active.revealedCount + 1} of ${active.questionCount}`, strong: true };
+    return { kind: 'next', label: `اعرض السؤال ${active.revealedCount + 1} من ${active.questionCount}`, strong: true };
   }
   if (s.phase === 'reveal' && active) {
     if (active.revealedCount < active.questionCount) {
-      return { kind: 'next', label: `Show question ${active.revealedCount + 1} of ${active.questionCount}`, strong: true };
+      return { kind: 'next', label: `اعرض السؤال ${active.revealedCount + 1} من ${active.questionCount}`, strong: true };
     }
-    return { kind: 'finish', label: `Show chapter ${active.order} results`, strong: true };
+    return { kind: 'finish', label: `اعرض نتائج الفصل ${active.order}`, strong: true };
   }
   const upcoming = data.chapters.find((c) => c.status !== 'completed');
   if (upcoming) {
-    return { kind: 'start', chapterId: upcoming.id, label: `Start chapter ${upcoming.order}: ${upcoming.title}`, strong: true };
+    return { kind: 'start', chapterId: upcoming.id, label: `ابدأ الفصل ${upcoming.order}: ${upcoming.title}`, strong: true };
   }
-  return { kind: 'end', label: 'Show final results and end the session', strong: true };
+  return { kind: 'end', label: 'اعرض النتائج النهائية وأنه الجلسة', strong: true };
 }
 
 function phaseText(data) {
   const s = data.session;
   const active = data.chapters.find((c) => c.id === s.activeChapterId);
-  if (s.status === 'ended') return 'Session ended. Final results are on the big screen and on every phone.';
-  if (s.paused) return 'Paused. Phones show a paused message and nobody can answer.';
+  if (s.status === 'ended') return 'انتهت الجلسة. النتائج النهائية معروضة على الشاشة الكبيرة وعلى كل الجوالات.';
+  if (s.paused) return 'متوقفة مؤقتًا. تعرض الجوالات رسالة التوقف ولا يمكن لأحد الإجابة.';
   switch (s.phase) {
     case 'chapter_intro':
-      return `Chapter ${active?.order} intro is on the big screen.`;
+      return `مقدمة الفصل ${active?.order} معروضة على الشاشة الكبيرة.`;
     case 'question':
-      return `Question ${data.question?.index} of ${data.question?.total} is open.`;
+      return `السؤال ${data.question?.index} من ${data.question?.total} مفتوح.`;
     case 'reveal':
-      return `Question ${data.question?.index} answer is revealed.`;
+      return `تم كشف إجابة السؤال ${data.question?.index}.`;
     case 'chapter_results':
-      return `Chapter ${active?.order} results are on the big screen.`;
+      return `نتائج الفصل ${active?.order} معروضة على الشاشة الكبيرة.`;
     default:
       return data.chapters.some((c) => c.status !== 'locked')
-        ? 'Between chapters. The leaderboard is on the big screen.'
-        : 'Waiting room. The big screen shows the join code.';
+        ? 'بين الفصول. لوحة الصدارة معروضة على الشاشة الكبيرة.'
+        : 'غرفة الانتظار. الشاشة الكبيرة تعرض رمز الانضمام.';
   }
 }
 
@@ -174,8 +177,8 @@ function Console({ token, sessionId, onSignOut }) {
   if (!data) {
     return (
       <main className="admin">
-        {feed.error ? <Notice tone="error">{messageFor(feed.error)}</Notice> : <Spinner label="Loading the session…" />}
-        <a className="link" href="#/admin">All sessions</a>
+        {feed.error ? <Notice tone="error">{messageFor(feed.error)}</Notice> : <Spinner label="جارٍ تحميل الجلسة…" />}
+        <a className="link" href="#/admin">كل الجلسات</a>
       </main>
     );
   }
@@ -191,14 +194,14 @@ function Console({ token, sessionId, onSignOut }) {
       const ex = await api.admin.exportResults(token, sessionId);
       downloadCsv(`nps-quiz-results-${s.code}-${fileStamp()}.csv`, resultsCsv(ex));
       return ex;
-    }, (ex) => `Downloaded results for ${plural(ex.rows.length, 'participant', 'participants')}.`);
+    }, (ex) => `تم تنزيل نتائج ${count(ex.rows.length, 'participant')}.`);
 
   const exportItems = () =>
     run(async () => {
       const items = await api.admin.exportItems(token, sessionId);
       downloadCsv(`nps-quiz-questions-${s.code}-${fileStamp()}.csv`, itemAnalysisCsv(items, s));
       return items;
-    }, 'Downloaded the question analysis.');
+    }, 'تم تنزيل تحليل الأسئلة.');
 
   const saveSetting = (patch, text) => run(() => api.admin.updateSettings(token, sessionId, patch), text);
 
@@ -206,11 +209,13 @@ function Console({ token, sessionId, onSignOut }) {
     <main className="admin console">
       <header className="admin__bar on-blue">
         <Logo />
-        <a className="admin__brand" href="#/admin">NPS Live Quiz</a>
-        <span className="admin__where" dir="auto">{s.title}</span>
+        <a className="admin__brand" href="#/admin">مسابقة NPS المباشرة</a>
+        <span className="admin__where">
+          <bdi>{s.title}</bdi>
+        </span>
         <ConnectionBadge connection={feed.connection} />
         <a className="btn btn--outline btn--s" href={screenUrl(s.code)} target="_blank" rel="noopener">
-          Open big screen
+          فتح الشاشة الكبيرة
         </a>
       </header>
 
@@ -221,8 +226,7 @@ function Console({ token, sessionId, onSignOut }) {
             <div>
               <h1 id="control-title" className="h3">{phaseText(data)}</h1>
               <p className="muted small">
-                {plural(data.participantCount, 'participant', 'participants')}, {data.activeCount} active now. Joining is{' '}
-                {s.registrationOpen ? 'open' : 'closed'}.
+                المشاركون: {data.participantCount}، النشطون الآن: {data.activeCount}. الانضمام {s.registrationOpen ? 'مفتوح' : 'مغلق'}.
               </p>
             </div>
           </div>
@@ -231,7 +235,7 @@ function Console({ token, sessionId, onSignOut }) {
             <div className="console__timer">
               <Timer question={data.question} now={now} />
               <p className="console__answered">
-                <strong>{data.live?.answered ?? 0}</strong> of {data.participantCount} answered
+                <strong>{data.live?.answered ?? 0}</strong> من {data.participantCount} أجابوا
               </p>
             </div>
           )}
@@ -250,12 +254,12 @@ function Console({ token, sessionId, onSignOut }) {
           <div className="btn-row">
             {s.phase === 'question' && !s.paused && (
               <button className="btn btn--outline btn--s" type="button" disabled={busy} onClick={() => run(() => api.admin.pause(token, sessionId))}>
-                Pause timer
+                إيقاف مؤقت
               </button>
             )}
             {s.phase === 'question' && s.paused && (
               <button className="btn btn--primary btn--s" type="button" disabled={busy} onClick={() => run(() => api.admin.resume(token, sessionId))}>
-                Resume timer
+                استئناف
               </button>
             )}
             {!ended && (
@@ -264,15 +268,15 @@ function Console({ token, sessionId, onSignOut }) {
                 type="button"
                 disabled={busy}
                 onClick={() =>
-                  run(() => api.admin.setRegistration(token, sessionId, !s.registrationOpen), s.registrationOpen ? 'Joining is now closed.' : 'Joining is open again.')
+                  run(() => api.admin.setRegistration(token, sessionId, !s.registrationOpen), s.registrationOpen ? 'تم إغلاق الانضمام.' : 'تمت إعادة فتح الانضمام.')
                 }
               >
-                {s.registrationOpen ? 'Close joining' : 'Reopen joining'}
+                {s.registrationOpen ? 'إغلاق الانضمام' : 'إعادة فتح الانضمام'}
               </button>
             )}
             {active && active.status === 'open' && s.phase !== 'question' && active.revealedCount < active.questionCount && (
               <button className="btn btn--quiet btn--s" type="button" disabled={busy} onClick={() => setConfirm({ kind: 'skip', chapter: active })}>
-                Skip the rest of this chapter
+                تخطي بقية هذا الفصل
               </button>
             )}
           </div>
@@ -285,13 +289,13 @@ function Console({ token, sessionId, onSignOut }) {
                 onChange={async (e) => {
                   const on = e.target.checked;
                   setAutoPending(on);
-                  const res = await saveSetting({ autoAdvance: on }, on ? 'Automatic mode is on.' : 'Automatic mode is off.');
+                  const res = await saveSetting({ autoAdvance: on }, on ? 'تم تشغيل الوضع التلقائي.' : 'تم إيقاف الوضع التلقائي.');
                   if (res === null) setAutoPending(null);
                 }}
               />
               <span>
-                <strong>Automatic mode.</strong> Reveals when time is up or everyone has answered, then moves on after{' '}
-                {settings.autoNextDelaySec ?? 8} seconds. Keep this console open.
+                <strong>الوضع التلقائي.</strong> يكشف الإجابة عند انتهاء الوقت أو عند إجابة الجميع، ثم ينتقل بعد{' '}
+                {count(settings.autoNextDelaySec ?? 8, 'second')}. أبق لوحة التحكم هذه مفتوحة.
               </span>
             </label>
           )}
@@ -299,10 +303,10 @@ function Console({ token, sessionId, onSignOut }) {
         </section>
 
         <section className="card console__join" aria-labelledby="join-title">
-          <h2 id="join-title" className="h3">Join link</h2>
-          <QrCode value={joinUrl(s.code)} size={176} label="QR code for this session" />
-          <CopyField label="This session" value={joinUrl(s.code)} />
-          <CopyField label="Permanent link for slides (opens the newest open session)" value={joinUrl()} />
+          <h2 id="join-title" className="h3">رابط الانضمام</h2>
+          <QrCode value={joinUrl(s.code)} size={176} label="رمز QR لهذه الجلسة" />
+          <CopyField label="رابط هذه الجلسة" value={joinUrl(s.code)} />
+          <CopyField label="الرابط الدائم للشرائح (يفتح أحدث جلسة مفتوحة)" value={joinUrl()} />
         </section>
 
         {data.question && (
@@ -310,7 +314,7 @@ function Console({ token, sessionId, onSignOut }) {
         )}
 
         <section className="card console__chapters" aria-labelledby="chapters-title">
-          <h2 id="chapters-title" className="h3">Chapters</h2>
+          <h2 id="chapters-title" className="h3">الفصول</h2>
           <ol className="console-chapters">
             {data.chapters.map((c) => {
               const canStart = !ended && c.status !== 'completed' && s.phase !== 'question' && c.id !== s.activeChapterId;
@@ -320,19 +324,19 @@ function Console({ token, sessionId, onSignOut }) {
                   <span className="console-chapters__info">
                     <strong>{c.title}</strong>
                     <span className="muted small">
-                      {c.status === 'locked' ? 'Not started' : c.status === 'open' ? 'In progress' : 'Completed'}. {c.revealedCount} of {c.questionCount} played,{' '}
-                      {plural(c.completedBy, 'person', 'people')} finished.
+                      {c.status === 'locked' ? 'لم يبدأ' : c.status === 'open' ? 'قيد التقدم' : 'مكتمل'}. عُرض {c.revealedCount} من{' '}
+                      {c.questionCount}، وأنهاه {c.completedBy}.
                     </span>
                   </span>
                   <span className="console-chapters__actions">
                     {canStart && (
                       <button className="btn btn--outline btn--s" type="button" disabled={busy} onClick={() => run(() => api.admin.startChapter(token, sessionId, c.id))}>
-                        {c.status === 'open' ? 'Continue' : 'Start'}
+                        {c.status === 'open' ? 'متابعة' : 'ابدأ'}
                       </button>
                     )}
                     {!ended && c.status !== 'locked' && (
                       <button className="btn btn--quiet btn--s" type="button" disabled={busy} onClick={() => setConfirm({ kind: 'resetChapter', chapter: c })}>
-                        Reset
+                        إعادة تعيين
                       </button>
                     )}
                   </span>
@@ -344,19 +348,19 @@ function Console({ token, sessionId, onSignOut }) {
 
         <section className="card console__people" aria-labelledby="people-title">
           <div className="card__head">
-            <h2 id="people-title" className="h3">Leaderboard</h2>
+            <h2 id="people-title" className="h3">لوحة الصدارة</h2>
             <div className="btn-row">
               <button className="btn btn--outline btn--s" type="button" disabled={busy} onClick={exportResults}>
-                Download results (CSV)
+                تنزيل النتائج (CSV)
               </button>
               <button className="btn btn--outline btn--s" type="button" disabled={busy} onClick={exportItems}>
-                Download question analysis (CSV)
+                تنزيل تحليل الأسئلة (CSV)
               </button>
             </div>
           </div>
           <p className="muted small">
-            Only revealed questions count, so scores update at each reveal. The big screen shows the top{' '}
-            {settings.screenLeaderboardSize ?? 10}; everyone sees their own rank on their phone.
+            لا تُحتسب إلا الأسئلة المكشوفة، لذا تتحدث النتائج عند كل كشف. تعرض الشاشة الكبيرة أول{' '}
+            {settings.screenLeaderboardSize ?? 10}، ويرى كل مشارك ترتيبه على جواله.
           </p>
           <PeopleTable rows={data.leaderboard} onRemove={(p) => setConfirm({ kind: 'remove', participant: p })} ended={ended} busy={busy} />
         </section>
@@ -365,17 +369,17 @@ function Console({ token, sessionId, onSignOut }) {
 
         {!ended && (
           <section className="card card--danger" aria-labelledby="danger-title">
-            <h2 id="danger-title" className="h3">End or reset</h2>
+            <h2 id="danger-title" className="h3">إنهاء الجلسة أو إعادة تعيينها</h2>
             <p className="muted small">
-              Resets void answers rather than erase them, so they stay available for audit. Ending a session stops all answers
-              and keeps the results for export.
+              إعادة التعيين تلغي الإجابات ولا تمحوها، فتبقى متاحة للتدقيق. إنهاء الجلسة يوقف كل الإجابات ويحتفظ بالنتائج
+              للتصدير.
             </p>
             <div className="btn-row">
               <button className="btn btn--outline btn--s" type="button" disabled={busy} onClick={() => setConfirm({ kind: 'resetSession' })}>
-                Reset the whole session
+                إعادة تعيين الجلسة كاملة
               </button>
               <button className="btn btn--danger btn--s" type="button" disabled={busy} onClick={() => setConfirm({ kind: 'end' })}>
-                End session
+                إنهاء الجلسة
               </button>
             </div>
           </section>
@@ -384,80 +388,80 @@ function Console({ token, sessionId, onSignOut }) {
 
       <ConfirmDialog
         open={confirm?.kind === 'resetChapter'}
-        title={`Reset chapter ${confirm?.chapter?.order}?`}
-        confirmLabel="Reset chapter"
-        requireText="RESET"
+        title={`إعادة تعيين الفصل ${confirm?.chapter?.order}؟`}
+        confirmLabel="إعادة تعيين الفصل"
+        requireText={CONFIRM_WORD}
         busy={busy}
         onCancel={() => setConfirm(null)}
         onConfirm={async () => {
           const c = confirm.chapter;
-          await run(() => api.admin.resetChapter(token, sessionId, c.id, 'RESET'), (r) => `Chapter ${c.order} reset. ${plural(r.voidedAnswers, 'answer was', 'answers were')} voided.`);
+          await run(() => api.admin.resetChapter(token, sessionId, c.id, 'RESET'), (r) => `تمت إعادة تعيين الفصل ${c.order}. الإجابات الملغاة: ${r.voidedAnswers}.`);
           setConfirm(null);
         }}
       >
         <p>
-          Everyone's answers for <strong>{confirm?.chapter?.title}</strong> are voided and their chapter points go back to zero. The
-          chapter can then be played again. Voided answers are kept for audit.
+          تُلغى إجابات الجميع في فصل <strong>{confirm?.chapter?.title}</strong> وتعود نقاط الفصل إلى الصفر، ثم يمكن لعبه من جديد.
+          تبقى الإجابات الملغاة محفوظة للتدقيق.
         </p>
       </ConfirmDialog>
 
       <ConfirmDialog
         open={confirm?.kind === 'resetSession'}
-        title="Reset the whole session?"
-        confirmLabel="Reset session"
-        requireText="RESET"
+        title="إعادة تعيين الجلسة كاملة؟"
+        confirmLabel="إعادة تعيين الجلسة"
+        requireText={CONFIRM_WORD}
         busy={busy}
         onCancel={() => setConfirm(null)}
         onConfirm={async () => {
-          await run(() => api.admin.resetSession(token, sessionId, 'RESET'), (r) => `Session reset. ${plural(r.voidedAnswers, 'answer was', 'answers were')} voided.`);
+          await run(() => api.admin.resetSession(token, sessionId, 'RESET'), (r) => `تمت إعادة تعيين الجلسة. الإجابات الملغاة: ${r.voidedAnswers}.`);
           setConfirm(null);
         }}
       >
-        <p>All answers in this session are voided, every score goes back to zero and all chapters lock again. Participants stay joined.</p>
+        <p>تُلغى كل الإجابات في هذه الجلسة، وتعود كل النتائج إلى الصفر، وتُقفل كل الفصول من جديد. يبقى المشاركون منضمين.</p>
       </ConfirmDialog>
 
       <ConfirmDialog
         open={confirm?.kind === 'end'}
-        title="End this session?"
-        confirmLabel="End session"
+        title="إنهاء هذه الجلسة؟"
+        confirmLabel="إنهاء الجلسة"
         busy={busy}
         onCancel={() => setConfirm(null)}
         onConfirm={async () => {
-          await run(() => api.admin.endSession(token, sessionId), 'Session ended. Final results are showing everywhere.');
+          await run(() => api.admin.endSession(token, sessionId), 'انتهت الجلسة، والنتائج النهائية معروضة في كل مكان.');
           setConfirm(null);
         }}
       >
-        <p>Nobody can join or answer after this, and phones show final positions. Results stay available for download.</p>
+        <p>لن يتمكن أحد من الانضمام أو الإجابة بعد ذلك، وتعرض الجوالات الترتيب النهائي. تبقى النتائج متاحة للتنزيل.</p>
       </ConfirmDialog>
 
       <ConfirmDialog
         open={confirm?.kind === 'skip'}
-        title="Skip the rest of this chapter?"
-        confirmLabel="Skip and show results"
+        title="تخطي بقية هذا الفصل؟"
+        confirmLabel="تخط واعرض النتائج"
         busy={busy}
         onCancel={() => setConfirm(null)}
         onConfirm={async () => {
-          await run(() => api.admin.finishChapter(token, sessionId, true), 'Chapter closed early.');
+          await run(() => api.admin.finishChapter(token, sessionId, true), 'تم إغلاق الفصل مبكرًا.');
           setConfirm(null);
         }}
       >
-        <p>The unplayed questions in this chapter are skipped and nobody can score on them. Chapter results show now.</p>
+        <p>تُتخطى الأسئلة التي لم تُعرض في هذا الفصل ولا يمكن لأحد كسب نقاط عليها، وتظهر نتائج الفصل الآن.</p>
       </ConfirmDialog>
 
       <ConfirmDialog
         open={confirm?.kind === 'remove'}
-        title={`Remove ${confirm?.participant?.displayName}?`}
-        confirmLabel="Remove"
+        title={`إزالة ${confirm?.participant?.displayName}؟`}
+        confirmLabel="إزالة"
         busy={busy}
         onCancel={() => setConfirm(null)}
         onConfirm={async () => {
-          await run(() => api.admin.removeParticipant(token, confirm.participant.participantId), 'Participant removed.');
+          await run(() => api.admin.removeParticipant(token, confirm.participant.participantId), 'تمت إزالة المشارك.');
           setConfirm(null);
         }}
       >
         <p>
-          Use this for a duplicate or inappropriate name. Their phone is signed out of the quiz and they disappear from the
-          leaderboard. They can join again with another name.
+          استخدم هذا للأسماء المكررة أو غير اللائقة. يخرج جوال المشارك من المسابقة ويختفي اسمه من لوحة الصدارة، ويمكنه الانضمام
+          مجددًا باسم آخر.
         </p>
       </ConfirmDialog>
     </main>
@@ -481,9 +485,9 @@ function CopyField({ label, value }) {
     <label className="field copy">
       <span className="field__label">{label}</span>
       <span className="copy__row">
-        <input ref={inputRef} className="input input--mono" value={value} readOnly onFocus={(e) => e.target.select()} />
+        <input ref={inputRef} className="input input--mono" dir="ltr" value={value} readOnly onFocus={(e) => e.target.select()} />
         <button className="btn btn--outline btn--s" type="button" onClick={copy}>
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? 'تم النسخ' : 'نسخ'}
         </button>
       </span>
     </label>
@@ -497,9 +501,9 @@ function LiveQuestion({ data }) {
   return (
     <section className="card console__question" aria-labelledby="live-title">
       <h2 id="live-title" className="h3">
-        Question {q.index} of {q.total}
+        السؤال {q.index} من {q.total}
       </h2>
-      <p className="console__qtext" dir="auto">{q.text}</p>
+      <p className="console__qtext">{q.text}</p>
       <ul className="dist">
         {q.options.map((o) => {
           const n = live.distribution?.[o.id] || 0;
@@ -507,8 +511,8 @@ function LiveQuestion({ data }) {
           return (
             <li key={o.id} className={`dist__row dist__row--${o.id.toLowerCase()}${o.id === q.correctOptionId ? ' is-key' : ''}`}>
               <span className="dist__label">
-                <Shape id={o.id} /> <strong>{o.id}</strong> <span dir="auto">{o.text}</span>
-                {o.id === q.correctOptionId && <span className="dist__key">correct</span>}
+                <Shape id={o.id} /> <strong>{optionLetter(o.id)}</strong> <span>{o.text}</span>
+                {o.id === q.correctOptionId && <span className="dist__key">الصحيحة</span>}
               </span>
               <span className="dist__bar" aria-hidden="true">
                 <span style={{ width: `${pct}%` }} />
@@ -519,32 +523,32 @@ function LiveQuestion({ data }) {
         })}
       </ul>
       <dl className="mini-stats">
-        <div><dt>Answered</dt><dd>{answered}</dd></div>
-        <div><dt>Correct</dt><dd>{live.correct || 0}</dd></div>
-        <div><dt>Wrong</dt><dd>{live.incorrect || 0}</dd></div>
-        <div><dt>Timed out</dt><dd>{live.timedOut || 0}</dd></div>
-        <div><dt>Not answered yet</dt><dd>{q.revealedAt ? 0 : live.notAnswered ?? 0}</dd></div>
+        <div><dt>أجابوا</dt><dd>{answered}</dd></div>
+        <div><dt>صحيحة</dt><dd>{live.correct || 0}</dd></div>
+        <div><dt>خاطئة</dt><dd>{live.incorrect || 0}</dd></div>
+        <div><dt>انتهى وقتهم</dt><dd>{live.timedOut || 0}</dd></div>
+        <div><dt>لم يجيبوا بعد</dt><dd>{q.revealedAt ? 0 : live.notAnswered ?? 0}</dd></div>
       </dl>
-      <p className="muted small">This panel shows the answer key. Do not project the console; use the big screen view.</p>
+      <p className="muted small">تعرض هذه اللوحة الإجابة الصحيحة. لا تعرض لوحة التحكم على جهاز العرض؛ استخدم الشاشة الكبيرة.</p>
     </section>
   );
 }
 
 function PeopleTable({ rows, onRemove, ended, busy }) {
-  if (!rows || rows.length === 0) return <p className="empty">Nobody has joined yet. Show the QR code on the big screen.</p>;
+  if (!rows || rows.length === 0) return <p className="empty">لم ينضم أحد بعد. اعرض رمز QR على الشاشة الكبيرة.</p>;
   return (
     <div className="table-wrap">
       <table className="table">
         <thead>
           <tr>
-            <th scope="col">Rank</th>
-            <th scope="col">Name</th>
-            <th scope="col" className="num">Points</th>
-            <th scope="col" className="num">Correct</th>
-            <th scope="col" className="num">Accuracy</th>
-            <th scope="col" className="num">Avg time</th>
-            <th scope="col" className="num">Chapters</th>
-            <th scope="col"><span className="sr-only">Actions</span></th>
+            <th scope="col">الترتيب</th>
+            <th scope="col">الاسم</th>
+            <th scope="col" className="num">النقاط</th>
+            <th scope="col" className="num">صحيحة</th>
+            <th scope="col" className="num">الدقة</th>
+            <th scope="col" className="num">متوسط الزمن</th>
+            <th scope="col" className="num">الفصول</th>
+            <th scope="col"><span className="sr-only">إجراءات</span></th>
           </tr>
         </thead>
         <tbody>
@@ -552,8 +556,8 @@ function PeopleTable({ rows, onRemove, ended, busy }) {
             <tr key={r.participantId}>
               <td>{r.rank}</td>
               <td>
-                <span className={`presence${r.active ? ' is-on' : ''}`} title={r.active ? 'Active now' : 'Not seen in the last 25 seconds'} aria-label={r.active ? 'Active now' : 'Inactive'} />
-                <span dir="auto">{r.displayName}</span>
+                <span className={`presence${r.active ? ' is-on' : ''}`} title={r.active ? 'نشط الآن' : 'غير نشط خلال آخر 25 ثانية'} aria-label={r.active ? 'نشط الآن' : 'غير نشط'} />
+                <bdi>{r.displayName}</bdi>
               </td>
               <td className="num">{points(r.totalPoints)}</td>
               <td className="num">{r.correctCount}</td>
@@ -563,7 +567,7 @@ function PeopleTable({ rows, onRemove, ended, busy }) {
               <td>
                 {!ended && (
                   <button className="btn btn--quiet btn--xs" type="button" disabled={busy} onClick={() => onRemove(r)}>
-                    Remove
+                    إزالة
                   </button>
                 )}
               </td>
@@ -583,43 +587,43 @@ function SettingsCard({ settings, ended, busy, onSave }) {
   if (ended) return null;
   return (
     <section className="card" aria-labelledby="settings-title">
-      <h2 id="settings-title" className="h3">Settings for this session</h2>
+      <h2 id="settings-title" className="h3">إعدادات هذه الجلسة</h2>
       <div className="stack">
         <form
           className="row row--end"
           onSubmit={(e) => {
             e.preventDefault();
             const n = Number(secondsValue);
-            onSave({ durationOverride: n === 20 ? null : n }, `Questions not yet played now run for ${n} seconds.`);
+            onSave({ durationOverride: n === 20 ? null : n }, `مدة الأسئلة التي لم تُعرض بعد: ${count(n, 'second')}.`);
           }}
         >
           <label className="field">
-            <span className="field__label">Seconds per question (questions not yet played)</span>
+            <span className="field__label">عدد الثواني لكل سؤال (للأسئلة التي لم تُعرض بعد)</span>
             <input className="input" type="number" min={10} max={60} value={secondsValue} onChange={(e) => setSecondsValue(e.target.value)} />
           </label>
           <button className="btn btn--outline btn--s" type="submit" disabled={busy}>
-            Apply
+            تطبيق
           </button>
         </form>
         <label className="field">
-          <span className="field__label">Show right or wrong</span>
+          <span className="field__label">إظهار الصواب والخطأ</span>
           <select
             className="input"
             value={settings.feedbackMode || 'on_reveal'}
             disabled={busy}
-            onChange={(e) => onSave({ feedbackMode: e.target.value }, 'Feedback setting saved.')}
+            onChange={(e) => onSave({ feedbackMode: e.target.value }, 'تم حفظ إعداد إظهار النتيجة.')}
           >
-            <option value="on_reveal">At the reveal (recommended)</option>
-            <option value="immediate">Right after each answer</option>
+            <option value="on_reveal">عند كشف الإجابة (موصى به)</option>
+            <option value="immediate">فور كل إجابة</option>
           </select>
         </label>
         <label className="field">
-          <span className="field__label">Scoring (applies to answers from now on)</span>
+          <span className="field__label">طريقة احتساب النقاط (تنطبق على الإجابات من الآن)</span>
           <select
             className="input"
             value={settings.scoringMode || 'linear'}
             disabled={busy}
-            onChange={(e) => onSave({ scoringMode: e.target.value }, 'Scoring setting saved.')}
+            onChange={(e) => onSave({ scoringMode: e.target.value }, 'تم حفظ طريقة الاحتساب.')}
           >
             {Object.entries(SCORING_MODES).map(([value, m]) => (
               <option key={value} value={value}>
@@ -629,16 +633,16 @@ function SettingsCard({ settings, ended, busy, onSave }) {
           </select>
         </label>
         <label className="field">
-          <span className="field__label">Names on the big-screen leaderboard</span>
+          <span className="field__label">عدد الأسماء في لوحة الصدارة على الشاشة الكبيرة</span>
           <select
             className="input"
             value={settings.screenLeaderboardSize ?? 10}
             disabled={busy}
-            onChange={(e) => onSave({ screenLeaderboardSize: Number(e.target.value) }, 'Leaderboard size saved.')}
+            onChange={(e) => onSave({ screenLeaderboardSize: Number(e.target.value) }, 'تم حفظ عدد الأسماء.')}
           >
             {[3, 5, 10, 15, 20].map((n) => (
               <option key={n} value={n}>
-                Top {n}
+                أول {n}
               </option>
             ))}
           </select>
