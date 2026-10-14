@@ -1,0 +1,215 @@
+// End-to-end run of a live session in real browsers: one presenter, one big
+// screen and three phones, against the real Supabase project.
+//
+//   npm run build && npm run preview          (in one terminal)
+//   ADMIN_PASSCODE=... BASE_URL=http://localhost:4173/ npm run test:e2e
+//
+// Screenshots go to tests/e2e/output (or SHOTS_DIR). The session it creates is
+// titled "[Test] ..." and is ended at the end of the run.
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const BASE = (process.env.BASE_URL || 'http://localhost:4173/').replace(/#.*$/, '');
+const PASS = process.env.ADMIN_PASSCODE;
+const SHOTS = process.env.SHOTS_DIR || path.resolve('tests/e2e/output');
+fs.mkdirSync(SHOTS, { recursive: true });
+if (!PASS) throw new Error('Set ADMIN_PASSCODE');
+
+const results = [];
+const check = (name, ok, detail = '') => {
+  results.push({ name, ok: !!ok });
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${!ok && detail ? `  [${detail}]` : ''}`);
+};
+const shot = (page, name) => page.screenshot({ path: path.join(SHOTS, `${name}.png`), fullPage: false });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const appears = (locator, timeout = 10000) => locator.waitFor({ timeout }).then(() => true, () => false);
+
+// If this machine reaches the internet through a proxy, hand it to Chromium
+// directly so the local preview server is still reached without it.
+const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
+const browser = await chromium.launch({
+  args: proxy ? [`--proxy-server=${proxy}`, '--proxy-bypass-list=localhost;127.0.0.1'] : [],
+});
+const errors = [];
+const watch = (page, label) => {
+  page.on('pageerror', (e) => errors.push(`${label}: ${e.message}`));
+  page.on('console', (m) => {
+    if (m.type() === 'error' && !/WebSocket|realtime|websocket/i.test(m.text())) errors.push(`${label}: ${m.text()}`);
+  });
+};
+
+try {
+  // ---------- presenter ----------
+  const adminCtx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
+  const admin = await adminCtx.newPage();
+  watch(admin, 'admin');
+  await admin.goto(`${BASE}#/admin`);
+  await admin.getByLabel('Passcode').fill('wrong-passcode');
+  await admin.getByRole('button', { name: 'Sign in' }).click();
+  check('presenter: wrong passcode shows an error', await appears(admin.getByText('That passcode is not correct.')));
+  await admin.getByLabel('Passcode').fill(PASS);
+  await admin.getByRole('button', { name: 'Sign in' }).click();
+  await admin.getByRole('heading', { name: 'New session' }).waitFor({ timeout: 15000 });
+  check('presenter: signs in', true);
+  await shot(admin, '01-admin-home');
+
+  await admin.getByLabel('Title shown on the big screen').fill('[Test] End-to-end run');
+  await admin.getByLabel('Seconds per question').fill('10');
+  await admin.getByRole('button', { name: 'Create session' }).click();
+  await admin.getByRole('button', { name: /Start chapter 1/ }).waitFor({ timeout: 15000 });
+  const plateLabel = await admin.locator('.console__status .plate__body').getAttribute('aria-label');
+  const code = plateLabel.replace('Join code', '').replace(/\s+/g, '');
+  check('presenter: session created with a 6-character code', /^[A-Z0-9]{6}$/.test(code), code);
+  const joinLink = await admin.locator('.copy input').first().inputValue();
+  check('presenter: join link uses the deployed address, not localhost-only paths', joinLink.startsWith(BASE) && joinLink.includes(`#/join?code=${code}`), joinLink);
+  await shot(admin, '02-admin-console-lobby');
+
+  // ---------- big screen ----------
+  const screenCtx = await browser.newContext({ viewport: { width: 1600, height: 900 } });
+  const screen = await screenCtx.newPage();
+  watch(screen, 'screen');
+  await screen.goto(`${BASE}#/screen/${code}`);
+  await screen.getByRole('heading', { name: 'Scan to join' }).waitFor({ timeout: 15000 });
+  check('screen: lobby shows QR and plate', await screen.locator('.lobby__qr img').isVisible());
+
+  // ---------- phones ----------
+  const phones = [];
+  for (const name of ['Majid', 'Saleh', 'Omar']) {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const page = await ctx.newPage();
+    watch(page, name);
+    await page.goto(joinLink);
+    phones.push({ name, ctx, page });
+  }
+  const [p1, p2, p3] = phones;
+  await p1.page.getByRole('button', { name: 'Join quiz' }).click();
+  check('phone: empty name is refused', await appears(p1.page.getByText('Enter your name to join.')));
+  await shot(p1.page, '03-phone-join-error');
+  for (const p of phones) {
+    await p.page.getByLabel(/Your name/).fill(`  ${p.name}  `);
+    await p.page.getByRole('button', { name: 'Join quiz' }).click();
+    await p.page.getByRole('heading', { name: /You are in/ }).waitFor({ timeout: 15000 });
+  }
+  check('phones: three people joined', true);
+  await shot(p1.page, '04-phone-waiting-room');
+
+  const dupCtx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const dup = await dupCtx.newPage();
+  await dup.goto(joinLink);
+  await dup.getByLabel(/Your name/).fill('majid');
+  await dup.getByRole('button', { name: 'Join quiz' }).click();
+  check('phone: duplicate name is refused', await appears(dup.getByText(/Someone already joined with that name/)));
+  await dupCtx.close();
+
+  await screen.waitForFunction(() => /3\s+people have joined/.test(document.body.innerText), null, { timeout: 15000 });
+  check('screen: lobby counts 3 people', true);
+  await shot(screen, '05-screen-lobby');
+
+  // ---------- chapter 1 ----------
+  await admin.getByRole('button', { name: /Start chapter 1/ }).click();
+  await p1.page.getByText('Chapter 1', { exact: true }).waitFor({ timeout: 15000 });
+  check('phones follow the presenter into chapter 1', true);
+  await shot(p1.page, '06-phone-chapter-intro');
+  await shot(screen, '07-screen-chapter-intro');
+
+  await admin.getByRole('button', { name: /Show question 1 of 5/ }).click();
+  await p1.page.getByText(/Answers open in/).waitFor({ timeout: 15000 });
+  check('phones get the lead-in with the question text first', await p1.page.locator('#q-text').isVisible());
+  await shot(p1.page, '08-phone-lead-in');
+  await p1.page.locator('.opt[data-option="B"]').waitFor({ timeout: 15000 });
+  await p1.page.locator('.opt[data-option="B"]').click(); // correct (Golden Record = B)
+  await p2.page.locator('.opt[data-option="A"]').waitFor({ timeout: 15000 });
+  await p2.page.locator('.opt[data-option="A"]').click(); // wrong
+  await p1.page.getByText(/Locked in: B/).waitFor({ timeout: 10000 });
+  check('phone: answer is locked in and other options are disabled', await p1.page.locator('.opt[data-option="C"]').isDisabled());
+  await shot(p1.page, '09-phone-answered');
+  await screen.waitForFunction(() => /2\s+of 3 answered/.test(document.body.innerText), null, { timeout: 15000 });
+  check('screen: shows 2 of 3 answered, without the answer key', (await screen.locator('.tile.is-correct').count()) === 0);
+  await shot(screen, '10-screen-question');
+  await shot(admin, '11-admin-console-question');
+
+  await p1.page.reload();
+  await p1.page.getByText(/Locked in: B/).waitFor({ timeout: 15000 });
+  check('phone: refresh keeps the participant and the locked answer', true);
+
+  await admin.getByRole('button', { name: 'Reveal the answer' }).waitFor({ timeout: 20000 });
+  await admin.getByRole('button', { name: 'Reveal the answer' }).click();
+  await p1.page.getByRole('heading', { name: 'Correct' }).waitFor({ timeout: 15000 });
+  await p2.page.getByRole('heading', { name: 'Not this time' }).waitFor({ timeout: 15000 });
+  await p3.page.getByRole('heading', { name: 'Time ran out' }).waitFor({ timeout: 15000 });
+  check('reveal: correct, wrong and timed-out phones each get the right feedback', true);
+  const pts = Number((await p1.page.locator('.reveal__points').innerText()).replace(/[^\d]/g, ''));
+  check('reveal: correct answer earned speed points (0-1000)', pts > 0 && pts <= 1000, String(pts));
+  await shot(p1.page, '12-phone-reveal-correct');
+  await shot(p2.page, '13-phone-reveal-wrong');
+  await screen.locator('.tile.is-correct').waitFor({ timeout: 15000 });
+  await shot(screen, '14-screen-reveal');
+
+  // ---------- automatic mode for the rest of the chapter ----------
+  await admin.getByLabel(/Automatic mode/).check();
+  const answerKey = ['D', 'A', 'C', 'A'];
+  for (let i = 0; i < 4; i += 1) {
+    for (const [j, p] of phones.entries()) {
+      const opt = j === 0 ? answerKey[i] : 'B';
+      await p.page.locator(`.opt[data-option="${opt}"]:not([disabled])`).waitFor({ timeout: 40000 });
+      await p.page.locator(`.opt[data-option="${opt}"]`).click();
+    }
+    await p1.page.locator('.reveal__title').waitFor({ timeout: 30000 });
+  }
+  await p1.page.getByText('Chapter 1 complete').waitFor({ timeout: 40000 });
+  check('automatic mode ran questions 2-5 and showed chapter results', true);
+  const correctText = await p1.page.locator('.stats > div').first().innerText();
+  check('chapter results: Majid answered 5 of 5 correctly', /5 of 5/.test(correctText), correctText);
+  await shot(p1.page, '15-phone-chapter-results');
+  await screen.getByRole('heading', { name: 'Chapter 1 complete' }).waitFor({ timeout: 15000 });
+  const top = await screen.locator('.board__row').first().innerText();
+  check('screen: leaderboard ranks Majid first', /Majid/.test(top), top);
+  await shot(screen, '16-screen-leaderboard');
+  await admin.getByLabel(/Automatic mode/).uncheck();
+  await shot(admin, '17-admin-console-after-chapter');
+
+  // ---------- exports ----------
+  const [download] = await Promise.all([
+    admin.waitForEvent('download', { timeout: 15000 }),
+    admin.getByRole('button', { name: 'Download results (CSV)' }).click(),
+  ]);
+  const csvPath = path.join(SHOTS, 'results.csv');
+  await download.saveAs(csvPath);
+  const csv = fs.readFileSync(csvPath, 'utf8').replace(/^﻿/, '');
+  const lines = csv.trim().split(/\r\n/);
+  check('CSV export: header plus one row per participant', lines.length === 4 && lines[0].startsWith('Session ID,'), `${lines.length} lines`);
+  check('CSV export: Majid ranked 1 with chapter 1 points', /,1,[0-9a-f-]{36},Majid,/.test(lines[1]), lines[1]);
+
+  const [download2] = await Promise.all([
+    admin.waitForEvent('download', { timeout: 15000 }),
+    admin.getByRole('button', { name: 'Download question analysis (CSV)' }).click(),
+  ]);
+  const itemPath = path.join(SHOTS, 'questions.csv');
+  await download2.saveAs(itemPath);
+  const items = fs.readFileSync(itemPath, 'utf8').trim().split(/\r\n/);
+  check('question analysis: one row per question (20)', items.length === 21, `${items.length} lines`);
+
+  // ---------- end ----------
+  await admin.getByRole('button', { name: 'End session' }).click();
+  await admin.getByRole('dialog').getByRole('button', { name: 'End session' }).click();
+  await p2.page.getByText('Final position').waitFor({ timeout: 15000 });
+  check('phones show final position after the session ends', true);
+  await shot(p2.page, '18-phone-final');
+  await screen.getByRole('heading', { name: 'Final results' }).waitFor({ timeout: 15000 });
+  await shot(screen, '19-screen-final');
+
+  const late = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const lp = await late.newPage();
+  await lp.goto(joinLink);
+  check('ended session: join page says it has ended', await appears(lp.getByText('This quiz has ended. Thanks for taking part.')));
+  await late.close();
+} catch (e) {
+  check(`unexpected failure: ${e.message.split('\n')[0]}`, false);
+} finally {
+  check('no browser errors on any page', errors.length === 0, errors.slice(0, 5).join(' | '));
+  await browser.close();
+  const failed = results.filter((r) => !r.ok).length;
+  console.log(`\n${results.length - failed}/${results.length} checks passed. Screenshots: ${SHOTS}`);
+  process.exit(failed ? 1 : 0);
+}

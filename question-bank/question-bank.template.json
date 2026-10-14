@@ -1,0 +1,554 @@
+{
+  "bankVersion": "YYYY-MM-DD.1",
+  "source": "Name and version of the source deck",
+  "chapters": [
+    {
+      "id": "ch1",
+      "title": "Chapter 1 title",
+      "description": "One-line description shown on the chapter screen",
+      "questions": [
+        {
+          "id": "ch1-q1",
+          "text": "Chapter 1, question 1: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch1-q2",
+          "text": "Chapter 1, question 2: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch1-q3",
+          "text": "Chapter 1, question 3: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch1-q4",
+          "text": "Chapter 1, question 4: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch1-q5",
+          "text": "Chapter 1, question 5: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        }
+      ]
+    },
+    {
+      "id": "ch2",
+      "title": "Chapter 2 title",
+      "description": "One-line description shown on the chapter screen",
+      "questions": [
+        {
+          "id": "ch2-q1",
+          "text": "Chapter 2, question 1: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch2-q2",
+          "text": "Chapter 2, question 2: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch2-q3",
+          "text": "Chapter 2, question 3: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch2-q4",
+          "text": "Chapter 2, question 4: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch2-q5",
+          "text": "Chapter 2, question 5: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        }
+      ]
+    },
+    {
+      "id": "ch3",
+      "title": "Chapter 3 title",
+      "description": "One-line description shown on the chapter screen",
+      "questions": [
+        {
+          "id": "ch3-q1",
+          "text": "Chapter 3, question 1: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch3-q2",
+          "text": "Chapter 3, question 2: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch3-q3",
+          "text": "Chapter 3, question 3: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch3-q4",
+          "text": "Chapter 3, question 4: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch3-q5",
+          "text": "Chapter 3, question 5: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        }
+      ]
+    },
+    {
+      "id": "ch4",
+      "title": "Chapter 4 title",
+      "description": "One-line description shown on the chapter screen",
+      "questions": [
+        {
+          "id": "ch4-q1",
+          "text": "Chapter 4, question 1: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch4-q2",
+          "text": "Chapter 4, question 2: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch4-q3",
+          "text": "Chapter 4, question 3: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch4-q4",
+          "text": "Chapter 4, question 4: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        },
+        {
+          "id": "ch4-q5",
+          "text": "Chapter 4, question 5: write the question here (up to 300 characters; aim for under 90 so it reads in 20 seconds on a phone).",
+          "options": [
+            {
+              "id": "A",
+              "text": "Option A"
+            },
+            {
+              "id": "B",
+              "text": "Option B"
+            },
+            {
+              "id": "C",
+              "text": "Option C"
+            },
+            {
+              "id": "D",
+              "text": "Option D"
+            }
+          ],
+          "correctOptionId": "A",
+          "explanation": "One sentence shown after the reveal that explains why the answer is right.",
+          "durationSeconds": 20,
+          "sourceRef": "Slide number in the source deck"
+        }
+      ]
+    }
+  ]
+}

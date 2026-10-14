@@ -1,0 +1,29 @@
+{
+  "name": "nps-live-quiz",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Live quiz and leaderboard for the NPS orientation workshop (React + Vite on GitHub Pages, Supabase backend).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "test": "vitest run",
+    "test:api": "python3 tests/api/backend_test.py",
+    "test:e2e": "node tests/e2e/live-session.e2e.mjs"
+  },
+  "dependencies": {
+    "@fontsource/barlow": "5.3.0",
+    "@fontsource/barlow-condensed": "5.3.0",
+    "@supabase/supabase-js": "2.117.3",
+    "qrcode": "1.5.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.7.0",
+    "playwright": "1.56.1",
+    "vite": "5.4.21",
+    "vitest": "2.1.9"
+  }
+}
