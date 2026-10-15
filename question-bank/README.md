@@ -52,4 +52,6 @@ From 14 October 2026 the live bank was the Arabic version (`2026-10-14.2-ar`): s
 
 Since 15 October 2026, 13:24 Riyadh time, the live bank is the AR Final version (`2026-10-15.1-ar-final`, written from the AR Final deck; the file `question-bank-ar-final-2026-10-15.private.json` was handed over privately). Same ids; the right letter moved in six questions (ch2-q1, ch2-q3, ch3-q1, ch3-q3, ch4-q1, ch4-q3). Sessions created before the import keep the earlier Arabic questions.
 
+From 15 October 2026, 15:40, the bank is edited in the editor, and each question's history is there (**السجل**). The first edits turned two chapter 1 questions into multiple choice, so the handed-over file no longer matches the live bank. Download a fresh copy from the console before relying on it.
+
 Two questions, ch1-q4 and ch3-q2, rest on points the AR Final deck has not settled (a figure on slide 8, and slides 26 and 31 disagreeing on one step). If the deck changes, change those questions. The details are in the private handover notes, not here, because they give away answers.

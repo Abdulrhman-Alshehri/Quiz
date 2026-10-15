@@ -1,6 +1,6 @@
 # Go-live: question editor and question types
 
-**Status, 15 October 2026:** built and tested on branch `feature/question-editor` against the local test backend (`tools/local-backend`). Nothing has been applied to the live project. Run this only when the presenter says go.
+**Status: live since 15 October 2026.** See "Go-live record" at the end. The steps below stay as the pattern for the next database change.
 
 ## What changes
 
@@ -144,3 +144,17 @@ Manual check, 10 minutes, on two real phones (one iPhone, one Android): the edit
 - One shared passcode: the history shows when a question changed, not who changed it.
 - Edits apply to new sessions only. Edit first, then create the workshop session.
 - The Arabic how-to deck does not cover the editor or the new question types yet.
+
+## Go-live record, 15 October 2026 (Riyadh time)
+
+- **14:36, pre-checks:** A to D passed (the database was confirmed unchanged after each cancelled attempt below). Open sessions: 8EY23D (workshop, between chapters), ZA9MM9 (chapter results), 9T7KT6 (left in a question since 14 October, deadline long past). None blocked the migration.
+- **About 15:30, migration:** the connector's `apply_migration` was cancelled three times at the approval step, so the presenter pasted the file into the SQL Editor and ran it. Two consequences, both handled:
+  - No row in the migration history. Added by hand at 15:40 (`20261015100000`, `quiz_question_types_and_editor`). Its `statements` holds a note with the file's commit (`e366d95`) and sha256, not the SQL itself. That only matters for Supabase branching, which the free plan does not offer.
+  - The editor stored the pasted function sources with Windows line endings (CRLF). The migration has no text value that spans a line, so this is whitespace only. Compared with line endings ignored, the live schema matches the tested one exactly: 63 functions (sources, security, settings and permissions), 102 columns, 43 constraints, 22 indexes, 7 policies, table permissions and row-level security.
+- **Checks E to G and advisors:** 4 chapters and 20 questions, all single choice; editor functions 4, `answers.selected_option_id` generated. Advisors: the same two security warnings, now 38 functions; performance, only an INFO note (the new history index not used yet).
+- **15:38, site:** `feature/question-editor` merged into `main` (`176a40e`); the GitHub Actions deploy passed.
+- **15:39 to 15:46, live checks** with temporary presenter tokens (all expired afterwards; every `[Test]` session ended): browser 24/24, backend 60/60, and a short multiple-choice check through the real Data API, 16/16 (the exact set scores; a partial set or an extra option scores 0; a second answer counts once; an unknown option is refused). The local stand-in cannot test that path, so this was the first proof on the real API.
+- **15:40 to 15:41:** the presenter changed ch1-q3 and ch1-q4 to multiple choice in the editor. Saved and logged correctly (3 history entries). Sessions created before 15:40, including 8EY23D, keep the earlier single-choice versions.
+- **Still to do:** the manual check on two real phones (step 5).
+
+If a later change is pasted into the SQL Editor again: add the history row by hand, and compare function sources with `replace(prosrc, chr(13), '')`.
