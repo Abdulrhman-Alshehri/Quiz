@@ -1276,3 +1276,6 @@ begin
 end $$;
 
 revoke execute on all functions in schema app_private from public;
+
+-- Ask the Data API to reload its schema cache (Supabase also does this on DDL).
+notify pgrst, 'reload schema';

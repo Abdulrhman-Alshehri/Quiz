@@ -9,3 +9,4 @@ tests/e2e/output/
 .DS_Store
 # Question banks with answer keys stay out of this public repository.
 question-bank/*.private.json
+__pycache__/

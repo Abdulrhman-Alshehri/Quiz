@@ -35,6 +35,24 @@ const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
 const browser = await chromium.launch({
   args: proxy ? [`--proxy-server=${proxy}`, '--proxy-bypass-list=localhost;127.0.0.1'] : [],
 });
+// This test edits the question bank, so it must never reach the live project by
+// accident: a local build made without .env.production.local talks to it. Requests
+// to hosted Supabase projects are blocked unless ALLOW_REMOTE_BANK_CHANGES=1 (a
+// separate test project); the live project is blocked always.
+const LIVE_REF = 'ntilqaoarrduzsklxnvz';
+const allowRemote = process.env.ALLOW_REMOTE_BANK_CHANGES === '1';
+const blocked = [];
+const newContext = async (options) => {
+  const ctx = await browser.newContext(options);
+  await ctx.route(
+    (url) => url.hostname.endsWith('.supabase.co') && (!allowRemote || url.hostname.startsWith(`${LIVE_REF}.`)),
+    (route) => {
+      blocked.push(new URL(route.request().url()).hostname);
+      return route.abort('blockedbyclient');
+    },
+  );
+  return ctx;
+};
 const errors = [];
 const watch = (page, label) => {
   page.on('pageerror', (e) => errors.push(`${label}: ${e.message}`));
@@ -65,7 +83,7 @@ async function fillQuestion(dialog, { type, text, options, right, seconds, expla
 
 try {
   // ---------- presenter: sign in, open the editor ----------
-  const adminCtx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
+  const adminCtx = await newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
   if (!PASS) {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     await adminCtx.addInitScript(([token, exp]) => {
@@ -83,7 +101,10 @@ try {
     await admin.getByLabel('رمز المرور').fill(PASS);
     await admin.getByRole('button', { name: 'دخول', exact: true }).click();
   }
-  await admin.getByRole('heading', { name: 'جلسة جديدة' }).waitFor({ timeout: 15000 });
+  await admin.getByRole('heading', { name: 'جلسة جديدة' }).waitFor({ timeout: 15000 }).catch((e) => {
+    if (blocked.length) throw new Error(`Refusing: the site under test uses a hosted Supabase project (${blocked[0]}). Build it against the local test backend (tools/local-backend).`);
+    throw e;
+  });
   await admin.getByRole('link', { name: 'تحرير الأسئلة' }).click();
   await admin.getByRole('heading', { name: 'بنك الأسئلة', level: 1 }).waitFor({ timeout: 15000 });
   check('editor: opens from the presenter home', true);
@@ -213,7 +234,7 @@ try {
   check('editor: chapters move up; the bank is ready again', await admin.getByText('البنك جاهز.').isVisible());
   await shot(admin, '06-editor-ready', true);
 
-  const phoneEditor = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  const phoneEditor = await newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   if (!PASS) {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     await phoneEditor.addInitScript(([token, exp]) => window.localStorage.setItem('npsquiz:admin', JSON.stringify({ token, expiresAt: exp })), [TOKEN, expiresAt]);
@@ -239,14 +260,14 @@ try {
   const code = plate.replace('رمز الانضمام', '').replace(/\s+/g, '');
   const joinLink = await admin.locator('.copy input').first().inputValue();
 
-  const screenCtx = await browser.newContext({ viewport: { width: 1600, height: 900 } });
+  const screenCtx = await newContext({ viewport: { width: 1600, height: 900 } });
   const screen = await screenCtx.newPage();
   watch(screen, 'screen');
   await screen.goto(`${BASE}#/screen/${code}`);
 
   const phones = [];
   for (const name of ['Noura', 'Fahad', 'Reem']) {
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const ctx = await newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
     watch(page, name);
     await page.goto(joinLink);

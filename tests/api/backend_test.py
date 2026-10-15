@@ -6,6 +6,10 @@ Usage:
     ADMIN_PASSCODE=<admin passcode> \\
     python3 tests/api/backend_test.py
 
+    ADMIN_TOKEN=<valid presenter token> can replace ADMIN_PASSCODE (as in the
+    browser tests): the "correct passcode signs in" check is then skipped, and
+    the token is signed out at the end.
+
     Add ALLOW_BANK_CHANGES=1 to also test the question-bank editor and the
     question types. That part adds, edits, retires and reorders chapters and
     questions, imports test banks, and finally imports the original bank back.
@@ -27,8 +31,19 @@ import urllib.request
 
 URL = os.environ["SUPABASE_URL"].rstrip("/")
 KEY = os.environ["SUPABASE_KEY"]
-PASSCODE = os.environ["ADMIN_PASSCODE"]
+PASSCODE = os.environ.get("ADMIN_PASSCODE")
+TOKEN = os.environ.get("ADMIN_TOKEN")
+if not PASSCODE and not TOKEN:
+    sys.exit("Set ADMIN_PASSCODE (or ADMIN_TOKEN)")
 BANK_CHANGES = os.environ.get("ALLOW_BANK_CHANGES") == "1"
+LIVE_REF = "ntilqaoarrduzsklxnvz"
+# The bank-editing checks change the question bank: never on the live project, and on
+# another hosted project only when ALLOW_REMOTE_BANK_CHANGES=1 is set as well.
+if BANK_CHANGES and LIVE_REF in URL:
+    sys.exit("Refusing: ALLOW_BANK_CHANGES=1 edits the question bank, and SUPABASE_URL is the live project.")
+if BANK_CHANGES and ".supabase.co" in URL and os.environ.get("ALLOW_REMOTE_BANK_CHANGES") != "1":
+    sys.exit("Refusing: ALLOW_BANK_CHANGES=1 edits the question bank, and SUPABASE_URL is a hosted project. "
+             "Use the local test backend, or set ALLOW_REMOTE_BANK_CHANGES=1 for a separate test project.")
 
 RESULTS = []
 
@@ -116,9 +131,13 @@ def main():
     # ---- admin auth -------------------------------------------------------
     st, res = rpc("admin_login", p_passcode="definitely-wrong")
     check("wrong passcode is rejected", st == 200 and res["ok"] is False and res["error"] == "INVALID_PASSCODE", res)
-    st, res = rpc("admin_login", p_passcode=PASSCODE)
-    check("correct passcode signs in", st == 200 and res["ok"] is True, res)
-    tok = res["token"]
+    if PASSCODE:
+        st, res = rpc("admin_login", p_passcode=PASSCODE)
+        check("correct passcode signs in", st == 200 and res["ok"] is True, res)
+        tok = res["token"]
+    else:
+        tok = TOKEN
+        print("(passcode sign-in check skipped: using ADMIN_TOKEN)")
 
     zero = "00000000-0000-0000-0000-000000000000"
     admin_fns = {
@@ -140,6 +159,17 @@ def main():
         "admin_reorder_questions": {"p_chapter_id": "ch1", "p_question_ids": ["ch1-q1"]},
         "admin_question_history": {"p_question_id": "ch1-q1"},
         "admin_revert_question": {"p_question_id": "ch1-q1", "p_change_id": 1},
+        "admin_check": {},
+        "admin_change_passcode": {"p_current": "x", "p_new": "xxxxxxxxxxxx"},
+        "admin_export_item_analysis": {"p_session_id": zero},
+        "admin_update_settings": {"p_session_id": zero, "p_settings": {}},
+        "admin_set_registration": {"p_session_id": zero, "p_open": False},
+        "admin_finish_chapter": {"p_session_id": zero},
+        "admin_pause": {"p_session_id": zero},
+        "admin_resume": {"p_session_id": zero},
+        "admin_reset_chapter": {"p_session_id": zero, "p_chapter_id": "ch1", "p_confirm": "x"},
+        "admin_reset_session": {"p_session_id": zero, "p_confirm": "x"},
+        "admin_remove_participant": {"p_participant_id": zero},
     }
     refused = [fn for fn, a in admin_fns.items()
                if err(rpc(fn, p_admin_token="forged-token-0000000000000000000000", **a)[1]) != "ADMIN_AUTH_REQUIRED"]
