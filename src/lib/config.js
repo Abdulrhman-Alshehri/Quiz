@@ -7,5 +7,9 @@ const key = String(
 export const config = {
   supabaseUrl: url,
   supabaseKey: key,
-  isConfigured: /^https:\/\/[^/]+\.[^/]+/.test(url) && key.length > 20 && !url.includes('YOUR-PROJECT-REF'),
+  // https for real projects; plain http only for a local test backend (tools/local-backend).
+  isConfigured:
+    (/^https:\/\/[^/]+\.[^/]+/.test(url) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url)) &&
+    key.length > 20 &&
+    !url.includes('YOUR-PROJECT-REF'),
 };
