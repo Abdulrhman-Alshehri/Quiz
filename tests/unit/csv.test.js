@@ -74,6 +74,19 @@ describe('result exports', () => {
       [{ chapterOrder: 1, chapterTitle: 'CDP', questionOrder: 2, questionId: 'ch1-q2', questionText: 'When?', correctOptionId: 'D', played: true, answered: 10, correct: 7, timedOut: 1, pctCorrect: 63.6, optionA: 1, optionB: 1, optionC: 1, optionD: 7, avgResponseMs: 6000 }],
       { code: 'ABC234' },
     );
-    expect(csv.split('\r\n')[1]).toBe('ABC234,1. CDP,2,ch1-q2,When?,د,نعم,10,7,63.6,1,1,1,1,7,6');
+    // Rows from before question types read as single choice with four options (E and F left empty).
+    expect(csv.split('\r\n')[1]).toBe('ABC234,1. CDP,2,ch1-q2,اختيار واحد,When?,د,نعم,10,7,63.6,1,1,1,1,7,,,6');
+  });
+
+  it('item analysis shows the type, every right answer and up to six option counts', () => {
+    const [header, line] = itemAnalysisCsv(
+      [{ chapterOrder: 2, chapterTitle: 'NPS', questionOrder: 1, questionId: 'ch2-q1', questionType: 'multiple', questionText: 'Pick all', correctOptionIds: ['A', 'E'], optionCount: 5, played: true, answered: 4, correct: 1, timedOut: 0, pctCorrect: 25, optionA: 3, optionB: 1, optionC: 0, optionD: 2, optionE: 2, optionF: 0, avgResponseMs: 12000 }],
+      { code: 'ABC234' },
+    ).trim().split('\r\n');
+    expect(header).toContain('نوع السؤال');
+    expect(header).toContain('اختاروا هـ');
+    expect(header).toContain('اختاروا و');
+    // Six option columns: A-E counted, F empty because this question has five options.
+    expect(line).toBe('ABC234,2. NPS,1,ch2-q1,اختيار متعدد,Pick all,أ، هـ,نعم,4,1,25,0,3,1,0,2,2,,12');
   });
 });

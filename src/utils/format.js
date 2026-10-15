@@ -41,6 +41,7 @@ export const NOUNS = {
   participant: { zero: 'لا مشاركين', one: 'مشارك واحد', two: 'مشاركان', few: '{n} مشاركين', many: '{n} مشاركًا', other: '{n} مشارك' },
   answer: { zero: 'لا إجابات', one: 'إجابة واحدة', two: 'إجابتان', few: '{n} إجابات', many: '{n} إجابة', other: '{n} إجابة' },
   second: { zero: '0 ثانية', one: 'ثانية واحدة', two: 'ثانيتان', few: '{n} ثوان', many: '{n} ثانية', other: '{n} ثانية' },
+  option: { zero: 'لا خيارات', one: 'خيار واحد', two: 'خياران', few: '{n} خيارات', many: '{n} خيارًا', other: '{n} خيار' },
 };
 
 export function count(n, noun) {
@@ -49,11 +50,39 @@ export function count(n, noun) {
   return form.replace('{n}', points(n));
 }
 
-// Display letters for the four options. Ids stay A-D in the database.
-export const OPTION_LETTERS = { A: 'أ', B: 'ب', C: 'ج', D: 'د' };
+// Display letters for up to six options (abjad order). Ids stay A-F in the database.
+export const OPTION_IDS = ['A', 'B', 'C', 'D', 'E', 'F'];
+export const OPTION_LETTERS = { A: 'أ', B: 'ب', C: 'ج', D: 'د', E: 'هـ', F: 'و' };
 
 export function optionLetter(id) {
   return OPTION_LETTERS[id] || id;
+}
+
+export function optionLetters(ids) {
+  return (ids || []).map(optionLetter).join('، ');
+}
+
+// Question types as the presenter and the participants see them.
+export const QUESTION_TYPES = {
+  single: { label: 'اختيار واحد', hint: 'إجابة صحيحة واحدة. يضغط المشارك على إجابة فتُرسل فورًا.' },
+  multiple: {
+    label: 'اختيار متعدد',
+    hint: 'إجابتان صحيحتان أو أكثر. يختار المشارك كل ما يراه صحيحًا ثم يضغط «تأكيد الإجابة»، ولا يكسب النقاط إلا إذا اختار الإجابات الصحيحة كلها ولا شيء غيرها.',
+  },
+  true_false: { label: 'صح أو خطأ', hint: 'خياران ثابتان: «صح» و«خطأ».' },
+};
+
+export function typeLabel(type) {
+  return (QUESTION_TYPES[type] || QUESTION_TYPES.single).label;
+}
+
+// The right answer(s) in words: the text for true/false, the letters otherwise.
+export function answerSummary(question) {
+  const ids = question.correctOptionIds || (question.correctOptionId ? [question.correctOptionId] : []);
+  if (question.type === 'true_false') {
+    return ids.map((id) => (question.options || []).find((o) => o.id === id)?.text || optionLetter(id)).join('، ');
+  }
+  return optionLetters(ids);
 }
 
 export function fileStamp(date = new Date()) {

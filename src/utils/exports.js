@@ -1,5 +1,5 @@
 import { toCsv } from './csv';
-import { optionLetter } from './format';
+import { OPTION_IDS, optionLetter, optionLetters, typeLabel } from './format';
 
 const STATUS_LABEL = {
   completed: 'أكمل كل الفصول',
@@ -38,23 +38,26 @@ export function resultsCsv(exported) {
 }
 
 // One row per question: how the room answered. Use it to see which ideas need re-teaching.
+// For multiple choice a person counts once for every option they ticked.
 export function itemAnalysisCsv(items, session) {
+  const optionColumns = OPTION_IDS.map((id, i) => ({
+    label: `اختاروا ${optionLetter(id)}`,
+    value: (r) => (i < (r.optionCount ?? 4) ? r[`option${id}`] ?? 0 : ''),
+  }));
   const columns = [
     { label: 'رمز الجلسة', value: () => session.code },
     { label: 'الفصل', value: (r) => `${r.chapterOrder}. ${r.chapterTitle}` },
     { label: 'رقم السؤال', value: (r) => r.questionOrder },
     { label: 'معرف السؤال', value: (r) => r.questionId },
+    { label: 'نوع السؤال', value: (r) => typeLabel(r.questionType) },
     { label: 'السؤال', value: (r) => r.questionText },
-    { label: 'الخيار الصحيح', value: (r) => optionLetter(r.correctOptionId) },
+    { label: 'الإجابات الصحيحة', value: (r) => optionLetters(r.correctOptionIds || (r.correctOptionId ? [r.correctOptionId] : [])) },
     { label: 'عُرض', value: (r) => r.played },
     { label: 'أجابوا', value: (r) => r.answered },
     { label: 'صحيحة', value: (r) => r.correct },
     { label: '% الصحيحة (من كل من شاهده)', value: (r) => (r.pctCorrect === null ? '' : Number(r.pctCorrect)) },
     { label: 'انتهى الوقت', value: (r) => r.timedOut },
-    { label: 'اختاروا أ', value: (r) => r.optionA },
-    { label: 'اختاروا ب', value: (r) => r.optionB },
-    { label: 'اختاروا ج', value: (r) => r.optionC },
-    { label: 'اختاروا د', value: (r) => r.optionD },
+    ...optionColumns,
     {
       label: 'متوسط زمن الإجابة (ث)',
       value: (r) => (r.avgResponseMs === null || r.avgResponseMs === undefined ? '' : Number((r.avgResponseMs / 1000).toFixed(2))),

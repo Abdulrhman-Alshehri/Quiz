@@ -11,6 +11,7 @@ import { Spinner } from './components/ui';
 const Screen = lazy(() => import('./pages/Screen'));
 const AdminHome = lazy(() => import('./pages/AdminHome'));
 const AdminSession = lazy(() => import('./pages/AdminSession'));
+const AdminBank = lazy(() => import('./pages/AdminBank'));
 
 export default function App() {
   const { path, query } = useRoute();
@@ -38,7 +39,9 @@ export default function App() {
       page = <Screen code={decodeURIComponent(parts[1] || '')} />;
       break;
     case 'admin':
-      page = parts[1] === 'session' && parts[2] ? <AdminSession sessionId={parts[2]} /> : <AdminHome />;
+      if (parts[1] === 'session' && parts[2]) page = <AdminSession sessionId={parts[2]} />;
+      else if (parts[1] === 'bank') page = <AdminBank />;
+      else page = <AdminHome />;
       break;
     default:
       page = <Landing notFound />;

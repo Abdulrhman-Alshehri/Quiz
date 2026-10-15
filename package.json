@@ -10,7 +10,10 @@
     "preview": "vite preview --port 4173 --strictPort",
     "test": "vitest run",
     "test:api": "python3 tests/api/backend_test.py",
-    "test:e2e": "node tests/e2e/live-session.e2e.mjs"
+    "test:e2e": "node tests/e2e/live-session.e2e.mjs",
+    "test:e2e:editor": "node tests/e2e/question-editor.e2e.mjs",
+    "local:db": "bash tools/local-backend/reset-db.sh",
+    "local:api": "node tools/local-backend/server.mjs"
   },
   "dependencies": {
     "@fontsource/carlito": "5.3.0",

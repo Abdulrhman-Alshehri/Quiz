@@ -7,10 +7,11 @@ import { joinUrl, screenUrl } from '../lib/router';
 import { useAdminToken } from '../lib/useAdmin';
 import { downloadCsv } from '../utils/csv';
 import { itemAnalysisCsv, resultsCsv } from '../utils/exports';
-import { count, fileStamp, optionLetter, percent, points, seconds } from '../utils/format';
+import { count, fileStamp, optionLetter, percent, points, seconds, typeLabel } from '../utils/format';
 import { SCORING_MODES } from '../utils/scoring';
 import { Logo } from '../components/Brand';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { DurationChoice } from '../components/DurationChoice';
 import { Shape } from '../components/Options';
 import { Plate } from '../components/Plate';
 import { QrCode } from '../components/QrCode';
@@ -498,21 +499,26 @@ function LiveQuestion({ data }) {
   const q = data.question;
   const live = data.live || { answered: 0, timedOut: 0, correct: 0, incorrect: 0, notAnswered: data.participantCount, distribution: {} };
   const answered = live.answered || 0;
+  const correctIds = q.correctOptionIds || (q.correctOptionId ? [q.correctOptionId] : []);
   return (
     <section className="card console__question" aria-labelledby="live-title">
       <h2 id="live-title" className="h3">
-        السؤال {q.index} من {q.total}
+        السؤال {q.index} من {q.total} · {typeLabel(q.type)}
       </h2>
       <p className="console__qtext">{q.text}</p>
+      {q.type === 'multiple' && (
+        <p className="muted small">يكسب النقاط من يختار كل الإجابات الصحيحة ولا شيء غيرها. الأعداد لكل خيار، والمشارك قد يختار أكثر من خيار.</p>
+      )}
       <ul className="dist">
         {q.options.map((o) => {
           const n = live.distribution?.[o.id] || 0;
           const pct = answered ? Math.round((100 * n) / answered) : 0;
+          const key = correctIds.includes(o.id);
           return (
-            <li key={o.id} className={`dist__row dist__row--${o.id.toLowerCase()}${o.id === q.correctOptionId ? ' is-key' : ''}`}>
+            <li key={o.id} className={`dist__row dist__row--${o.id.toLowerCase()}${key ? ' is-key' : ''}`} data-option={o.id}>
               <span className="dist__label">
                 <Shape id={o.id} /> <strong>{optionLetter(o.id)}</strong> <span>{o.text}</span>
-                {o.id === q.correctOptionId && <span className="dist__key">الصحيحة</span>}
+                {key && <span className="dist__key">صحيحة</span>}
               </span>
               <span className="dist__bar" aria-hidden="true">
                 <span style={{ width: `${pct}%` }} />
@@ -580,29 +586,42 @@ function PeopleTable({ rows, onRemove, ended, busy }) {
 }
 
 function SettingsCard({ settings, ended, busy, onSave }) {
-  const [secondsValue, setSecondsValue] = useState(settings.durationOverride ?? 20);
+  const override = settings.durationOverride ?? null;
+  const [timing, setTiming] = useState(override ? 'fixed' : 'bank');
+  const [secondsValue, setSecondsValue] = useState(override ?? 20);
   useEffect(() => {
-    setSecondsValue(settings.durationOverride ?? 20);
-  }, [settings.durationOverride]);
+    setTiming(override ? 'fixed' : 'bank');
+    setSecondsValue(override ?? 20);
+  }, [override]);
   if (ended) return null;
   return (
     <section className="card" aria-labelledby="settings-title">
       <h2 id="settings-title" className="h3">إعدادات هذه الجلسة</h2>
       <div className="stack">
         <form
-          className="row row--end"
+          className="stack"
           onSubmit={(e) => {
             e.preventDefault();
             const n = Number(secondsValue);
-            onSave({ durationOverride: n === 20 ? null : n }, `مدة الأسئلة التي لم تُعرض بعد: ${count(n, 'second')}.`);
+            onSave(
+              { durationOverride: timing === 'bank' ? null : n },
+              timing === 'bank'
+                ? 'الأسئلة التي لم تُعرض بعد تأخذ مدتها من بنك الأسئلة.'
+                : `مدة الأسئلة التي لم تُعرض بعد: ${count(n, 'second')}.`,
+            );
           }}
         >
-          <label className="field">
-            <span className="field__label">عدد الثواني لكل سؤال (للأسئلة التي لم تُعرض بعد)</span>
-            <input className="input" type="number" min={10} max={60} value={secondsValue} onChange={(e) => setSecondsValue(e.target.value)} />
-          </label>
+          <DurationChoice
+            timing={timing}
+            seconds={secondsValue}
+            onTiming={setTiming}
+            onSeconds={setSecondsValue}
+            name="session-timing"
+            disabled={busy}
+          />
+          <p className="muted small">ينطبق على الأسئلة التي لم تُعرض بعد في هذه الجلسة.</p>
           <button className="btn btn--outline btn--s" type="submit" disabled={busy}>
-            تطبيق
+            تطبيق المدة
           </button>
         </form>
         <label className="field">

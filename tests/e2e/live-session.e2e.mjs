@@ -9,7 +9,8 @@
 // the two sign-in checks are then skipped.
 //
 // Screenshots go to tests/e2e/output (or SHOTS_DIR). The session it creates is
-// titled "[Test] ..." and is ended at the end of the run.
+// titled "[Test] ..." and is ended at the end of the run. The right answers are
+// read from the presenter console, so the test works with any question bank.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -29,6 +30,27 @@ const check = (name, ok, detail = '') => {
 const shot = (page, name) => page.screenshot({ path: path.join(SHOTS, `${name}.png`), fullPage: false });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const appears = (locator, timeout = 10000) => locator.waitFor({ timeout }).then(() => true, () => false);
+
+// The open question's options and right answers, as the presenter console shows them.
+async function answerKey(admin) {
+  const rows = admin.locator('.console__question .dist__row');
+  await rows.first().waitFor({ timeout: 20000 });
+  const all = await rows.evaluateAll((els) => els.map((e) => e.dataset.option));
+  const right = await admin.locator('.console__question .dist__row.is-key').evaluateAll((els) => els.map((e) => e.dataset.option));
+  return { all, right, wrong: all.find((id) => !right.includes(id)) || all[0] };
+}
+
+// One tap for single choice and true/false; tick every option then confirm for multiple choice.
+async function answerOn(page, ids, timeout = 40000) {
+  await page.locator(`.opt[data-option="${ids[0]}"]:not([disabled])`).waitFor({ timeout });
+  const multi = (await page.locator('.opt--multi').count()) > 0;
+  if (!multi) {
+    await page.locator(`.opt[data-option="${ids[0]}"]`).click();
+    return;
+  }
+  for (const id of ids) await page.locator(`.opt[data-option="${id}"]`).click();
+  await page.getByRole('button', { name: /تأكيد الإجابة/ }).click();
+}
 
 // If this machine reaches the internet through a proxy, hand it to Chromium
 // directly so the local preview server is still reached without it.
@@ -73,6 +95,7 @@ try {
   await shot(admin, '01-admin-home');
 
   await admin.getByLabel('العنوان على الشاشة الكبيرة').fill('[Test] End-to-end run');
+  await admin.getByRole('radio', { name: /مدة موحدة/ }).check();
   await admin.getByLabel('عدد الثواني لكل سؤال').fill('10');
   await admin.getByRole('button', { name: 'إنشاء الجلسة' }).click();
   await admin.getByRole('button', { name: /ابدأ الفصل 1/ }).waitFor({ timeout: 15000 });
@@ -131,16 +154,18 @@ try {
   await shot(p1.page, '06-phone-chapter-intro');
   await shot(screen, '07-screen-chapter-intro');
 
-  await admin.getByRole('button', { name: /اعرض السؤال 1 من 5/ }).click();
+  const firstButton = admin.getByRole('button', { name: /اعرض السؤال 1 من \d+/ });
+  const perChapter = Number((await firstButton.innerText()).match(/من (\d+)/)[1]);
+  await firstButton.click();
   await p1.page.getByText(/تفتح الإجابات خلال/).waitFor({ timeout: 15000 });
   check('phones get the lead-in with the question text first', await p1.page.locator('#q-text').isVisible());
   await shot(p1.page, '08-phone-lead-in');
-  await p1.page.locator('.opt[data-option="B"]').waitFor({ timeout: 15000 });
-  await p1.page.locator('.opt[data-option="B"]').click(); // correct (Golden Record = B)
-  await p2.page.locator('.opt[data-option="A"]').waitFor({ timeout: 15000 });
-  await p2.page.locator('.opt[data-option="A"]').click(); // wrong
-  await p1.page.getByText(/تم تسجيل إجابتك: ب/).waitFor({ timeout: 10000 });
-  check('phone: answer is locked in and other options are disabled', await p1.page.locator('.opt[data-option="C"]').isDisabled());
+  const key1 = await answerKey(admin);
+  await answerOn(p1.page, key1.right); // right
+  await answerOn(p2.page, [key1.wrong]); // wrong
+  await p1.page.getByText(/تم تسجيل إجابتك: /).waitFor({ timeout: 10000 });
+  const other = key1.all.find((id) => !key1.right.includes(id));
+  check('phone: answer is locked in and other options are disabled', await p1.page.locator(`.opt[data-option="${other}"]`).isDisabled());
   await shot(p1.page, '09-phone-answered');
   await shot(p3.page, '09b-phone-question-open');
   await screen.waitForFunction(() => /2\s+من 3 أجابوا/.test(document.body.innerText), null, { timeout: 15000 });
@@ -149,7 +174,7 @@ try {
   await shot(admin, '11-admin-console-question');
 
   await p1.page.reload();
-  await p1.page.getByText(/تم تسجيل إجابتك: ب/).waitFor({ timeout: 15000 });
+  await p1.page.getByText(/تم تسجيل إجابتك: /).waitFor({ timeout: 15000 });
   check('phone: refresh keeps the participant and the locked answer', true);
 
   await admin.getByRole('button', { name: 'اكشف الإجابة', exact: true }).waitFor({ timeout: 20000 });
@@ -167,19 +192,16 @@ try {
 
   // ---------- automatic mode for the rest of the chapter ----------
   await admin.getByLabel(/الوضع التلقائي/).check();
-  const answerKey = ['D', 'A', 'C', 'A'];
-  for (let i = 0; i < 4; i += 1) {
-    for (const [j, p] of phones.entries()) {
-      const opt = j === 0 ? answerKey[i] : 'B';
-      await p.page.locator(`.opt[data-option="${opt}"]:not([disabled])`).waitFor({ timeout: 40000 });
-      await p.page.locator(`.opt[data-option="${opt}"]`).click();
-    }
+  for (let i = 1; i < perChapter; i += 1) {
+    await admin.locator('#live-title', { hasText: new RegExp(`السؤال ${i + 1} من ${perChapter}`) }).waitFor({ timeout: 40000 });
+    const key = await answerKey(admin);
+    for (const [j, p] of phones.entries()) await answerOn(p.page, j === 0 ? key.right : [key.wrong]);
     await p1.page.locator('.reveal__title').waitFor({ timeout: 30000 });
   }
   await p1.page.getByText('اكتمل الفصل 1').waitFor({ timeout: 40000 });
-  check('automatic mode ran questions 2-5 and showed chapter results', true);
+  check(`automatic mode ran questions 2-${perChapter} and showed chapter results`, true);
   const correctText = await p1.page.locator('.stats > div').first().innerText();
-  check('chapter results: Majid answered 5 of 5 correctly', /5 من 5/.test(correctText), correctText);
+  check(`chapter results: Majid answered ${perChapter} of ${perChapter} correctly`, new RegExp(`${perChapter} من ${perChapter}`).test(correctText), correctText);
   await shot(p1.page, '15-phone-chapter-results');
   await screen.getByRole('heading', { name: 'اكتمل الفصل 1' }).waitFor({ timeout: 15000 });
   const top = await screen.locator('.board__row').first().innerText();
@@ -207,7 +229,10 @@ try {
   const itemPath = path.join(SHOTS, 'questions.csv');
   await download2.saveAs(itemPath);
   const items = fs.readFileSync(itemPath, 'utf8').trim().split(/\r\n/);
-  check('question analysis: one row per question (20)', items.length === 21, `${items.length} lines`);
+  const totals = await admin.locator('.console-chapters__item').evaluateAll((els) =>
+    els.reduce((n, e) => n + Number((e.innerText.match(/من\s*(\d+)/) || [0, 0])[1]), 0),
+  );
+  check(`question analysis: one row per question (${totals})`, items.length === totals + 1, `${items.length} lines`);
 
   // ---------- end ----------
   await admin.getByRole('button', { name: 'إنهاء الجلسة', exact: true }).click();

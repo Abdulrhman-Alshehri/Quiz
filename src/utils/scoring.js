@@ -38,3 +38,12 @@ export function compareStanding(a, b) {
   if (aj !== bj) return aj - bj;
   return String(a.participantId).localeCompare(String(b.participantId));
 }
+
+// Multiple choice is all or nothing: an answer is right only when the chosen set
+// is exactly the set of right answers (order and repeats do not matter).
+// Mirrors the check in public.submit_answer.
+export function isRightSelection(selected, correct) {
+  const a = [...new Set(selected || [])].sort();
+  const b = [...new Set(correct || [])].sort();
+  return a.length > 0 && a.length === b.length && a.every((x, i) => x === b[i]);
+}

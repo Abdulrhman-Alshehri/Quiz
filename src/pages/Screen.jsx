@@ -11,7 +11,7 @@ import { QrCode } from '../components/QrCode';
 import { Leaderboard } from '../components/Leaderboard';
 import { Timer, timerState } from '../components/Timer';
 import { ConnectionBadge, Spinner } from '../components/ui';
-import { count } from '../utils/format';
+import { count, typeLabel } from '../utils/format';
 
 // Projector view. It never receives the answer key before the reveal and shows
 // only the top of the leaderboard, so nobody is ranked last in front of the room.
@@ -61,7 +61,9 @@ export default function Screen({ code }) {
   const upcoming = chapters.find((c) => c.status !== 'completed');
   const questionBand = () => ({
     title: `الفصل ${data.chapter?.order}: ${data.chapter?.title}`,
-    subtitle: `السؤال ${data.question.index} من ${data.question.total}`,
+    subtitle: `السؤال ${data.question.index} من ${data.question.total}${
+      data.question.type && data.question.type !== 'single' ? ` · ${typeLabel(data.question.type)}` : ''
+    }`,
   });
 
   let view;
@@ -215,10 +217,11 @@ function QuestionBoard({ data, now }) {
           </p>
         </div>
       </div>
+      {q.type === 'multiple' && <p className="qboard__hint">اختر كل الإجابات الصحيحة، ثم اضغط «تأكيد الإجابة»</p>}
       {t.phase === 'leadin' ? (
         <p className="qboard__ready">تفتح الإجابات خلال {Math.ceil(t.leadIn / 1000)}…</p>
       ) : (
-        <div className="tiles">
+        <div className={`tiles tiles--n${q.options.length}`}>
           {q.options.map((o) => (
             <OptionTile key={o.id} option={o} revealed={false} />
           ))}
@@ -231,7 +234,9 @@ function QuestionBoard({ data, now }) {
 function RevealBoard({ data }) {
   const q = data.question;
   const r = data.reveal;
-  const totalAnswers = Object.values(r.distribution || {}).reduce((a, b) => a + b, 0);
+  const correctIds = r.correctOptionIds || (r.correctOptionId ? [r.correctOptionId] : []);
+  // Bars show the share of people who answered (for multiple choice one person can pick several options).
+  const totalAnswers = r.answeredCount ?? Object.values(r.distribution || {}).reduce((a, b) => a + b, 0);
   return (
     <section className="qboard qboard--reveal">
       <div className="qboard__main">
@@ -242,13 +247,13 @@ function RevealBoard({ data }) {
           </p>
         </div>
       </div>
-      <div className="tiles">
+      <div className={`tiles tiles--n${q.options.length}`}>
         {q.options.map((o) => (
           <OptionTile
             key={o.id}
             option={o}
             revealed
-            correct={o.id === r.correctOptionId}
+            correct={correctIds.includes(o.id)}
             count={r.distribution?.[o.id] || 0}
             total={totalAnswers}
           />
