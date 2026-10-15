@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { messageFor } from '../lib/errors';
 import { navigate } from '../lib/router';
 import { useAdminToken } from '../lib/useAdmin';
-import { downloadJson } from '../utils/csv';
-import { count, dateTime, fileStamp, longDate, optionLetter } from '../utils/format';
+import { count, dateTime, longDate, QUESTION_TYPES } from '../utils/format';
 import { SCORING_MODES } from '../utils/scoring';
+import { BankFileActions } from '../components/BankFile';
+import { DurationChoice } from '../components/DurationChoice';
 import { Logo } from '../components/Brand';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Plate } from '../components/Plate';
 import { Notice, Spinner } from '../components/ui';
 import AdminLogin from './AdminLogin';
@@ -20,6 +20,7 @@ export default function AdminHome() {
 
 function Dashboard({ token, onSignOut }) {
   const [sessions, setSessions] = useState(null);
+  const [bank, setBank] = useState(null);
   const [error, setError] = useState(null);
 
   const handle = useCallback(
@@ -33,10 +34,14 @@ function Dashboard({ token, onSignOut }) {
   const load = useCallback(() => {
     api.admin.listSessions(token).then(setSessions).catch(handle);
   }, [token, handle]);
+  const loadBank = useCallback(() => {
+    api.admin.getBank(token).then(setBank).catch(handle);
+  }, [token, handle]);
 
   useEffect(() => {
     load();
-  }, [load]);
+    loadBank();
+  }, [load, loadBank]);
 
   const signOut = async () => {
     try {
@@ -63,7 +68,7 @@ function Dashboard({ token, onSignOut }) {
       <div className="admin__grid">
         <div className="admin__col">
           {error && <Notice tone="error">{messageFor(error)}</Notice>}
-          <NewSession token={token} onError={handle} />
+          <NewSession token={token} bank={bank} onError={handle} />
           <section className="card" aria-labelledby="sessions-title">
             <h2 id="sessions-title" className="h3">الجلسات</h2>
             {!sessions && <Spinner label="جارٍ تحميل الجلسات…" />}
@@ -90,7 +95,7 @@ function Dashboard({ token, onSignOut }) {
           </section>
         </div>
         <div className="admin__col">
-          <BankPanel token={token} onError={handle} />
+          <BankPanel token={token} bank={bank} onReload={loadBank} onError={handle} />
           <PasscodePanel token={token} onError={handle} />
         </div>
       </div>
@@ -118,8 +123,9 @@ function SessionRow({ s }) {
   );
 }
 
-function NewSession({ token, onError }) {
+function NewSession({ token, bank, onError }) {
   const [title, setTitle] = useState(`ورشة تعريف NPS، ${longDate()}`);
+  const [timing, setTiming] = useState('bank');
   const [seconds, setSeconds] = useState(20);
   const [scoring, setScoring] = useState('linear');
   const [feedback, setFeedback] = useState('on_reveal');
@@ -133,7 +139,7 @@ function NewSession({ token, onError }) {
     setError(null);
     try {
       const res = await api.admin.createSession(token, title, {
-        durationOverride: Number(seconds) === 20 ? null : Number(seconds),
+        durationOverride: timing === 'bank' ? null : Number(seconds),
         scoringMode: scoring,
         feedbackMode: feedback,
         autoAdvance: auto,
@@ -156,27 +162,14 @@ function NewSession({ token, onError }) {
           <span className="field__label">العنوان على الشاشة الكبيرة</span>
           <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required />
         </label>
-        <div className="row">
-          <label className="field">
-            <span className="field__label">عدد الثواني لكل سؤال</span>
-            <input
-              className="input"
-              type="number"
-              min={10}
-              max={60}
-              value={seconds}
-              onChange={(e) => setSeconds(e.target.value)}
-              required
-            />
-          </label>
-          <label className="field">
-            <span className="field__label">إظهار الصواب والخطأ</span>
-            <select className="input" value={feedback} onChange={(e) => setFeedback(e.target.value)}>
-              <option value="on_reveal">عند كشف الإجابة (موصى به)</option>
-              <option value="immediate">فور كل إجابة</option>
-            </select>
-          </label>
-        </div>
+        <DurationChoice timing={timing} seconds={seconds} onTiming={setTiming} onSeconds={setSeconds} name="new-timing" />
+        <label className="field">
+          <span className="field__label">إظهار الصواب والخطأ</span>
+          <select className="input" value={feedback} onChange={(e) => setFeedback(e.target.value)}>
+            <option value="on_reveal">عند كشف الإجابة (موصى به)</option>
+            <option value="immediate">فور كل إجابة</option>
+          </select>
+        </label>
         <fieldset className="field">
           <legend className="field__label">طريقة احتساب النقاط</legend>
           {Object.entries(SCORING_MODES).map(([value, m]) => (
@@ -195,6 +188,11 @@ function NewSession({ token, onError }) {
             يمكنك تشغيله أو إيقافه أثناء الجلسة.
           </span>
         </label>
+        {bank?.problem && (
+          <Notice tone="warn">
+            لا يمكن إنشاء جلسة بعد: {bank.problem} <a className="link" href="#/admin/bank">افتح تحرير الأسئلة</a>
+          </Notice>
+        )}
         {error && <Notice tone="error">{messageFor(error)}</Notice>}
         <button className="btn btn--primary" type="submit" disabled={busy}>
           {busy ? 'جارٍ الإنشاء…' : 'إنشاء الجلسة'}
@@ -204,127 +202,42 @@ function NewSession({ token, onError }) {
   );
 }
 
-function BankPanel({ token, onError }) {
-  const [bank, setBank] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-  const fileRef = useRef(null);
-
-  const load = useCallback(() => {
-    api.admin.getBank(token).then(setBank).catch(onError);
-  }, [token, onError]);
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const pick = async (e) => {
-    setError(null);
-    setResult(null);
-    const file = e.target.files && e.target.files[0];
-    e.target.value = '';
-    if (!file) return;
-    try {
-      const parsed = JSON.parse(await file.text());
-      const chapters = Array.isArray(parsed.chapters) ? parsed.chapters : [];
-      const questions = chapters.reduce((n, c) => n + (Array.isArray(c.questions) ? c.questions.length : 0), 0);
-      setPreview({ name: file.name, data: parsed, chapters: chapters.length, questions });
-    } catch {
-      setError(new Error('هذا الملف ليس بصيغة JSON صالحة. نزّل البنك الحالي لترى الصيغة المطلوبة.'));
-    }
-  };
-
-  const doImport = async () => {
-    setImporting(true);
-    try {
-      const res = await api.admin.importBank(token, preview.data);
-      setResult(res);
-      setPreview(null);
-      load();
-    } catch (err) {
-      if (err.code === 'ADMIN_AUTH_REQUIRED') onError(err);
-      else setError(err);
-      setPreview(null);
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const total = bank ? bank.chapters.reduce((n, c) => n + c.questions.length, 0) : 0;
+function BankPanel({ token, bank, onReload, onError }) {
+  const questions = bank ? bank.chapters.flatMap((c) => c.questions) : [];
+  const mix = Object.entries(QUESTION_TYPES)
+    .map(([type, t]) => [t.label, questions.filter((q) => q.type === type).length])
+    .filter(([, n]) => n > 0)
+    .map(([label, n]) => `${label}: ${n}`)
+    .join('، ');
   return (
     <section className="card" aria-labelledby="bank-title">
-      <h2 id="bank-title" className="h3">بنك الأسئلة</h2>
+      <div className="card__head">
+        <h2 id="bank-title" className="h3">بنك الأسئلة</h2>
+        <a className="btn btn--primary btn--s" href="#/admin/bank">
+          تحرير الأسئلة
+        </a>
+      </div>
       <p className="muted small">الجلسات الجديدة تنسخ هذه الأسئلة، والجلسات الموجودة تحتفظ بالأسئلة التي بدأت بها.</p>
       {!bank && <Spinner label="جارٍ تحميل الأسئلة…" />}
       {bank && (
-        <ol className="bank">
-          {bank.chapters.map((c) => (
-            <li key={c.id}>
-              <details>
-                <summary>
-                  <strong>{c.title}</strong> <span className="muted">({count(c.questions.length, 'question')})</span>
-                </summary>
-                <ol className="bank__qs">
-                  {c.questions.map((q) => (
-                    <li key={q.id}>
-                      <span>{q.text}</span>
-                      <span className="muted small">
-                        {' '}
-                        الإجابة {optionLetter(q.correctOptionId)}، {q.durationSeconds} ث{q.sourceRef ? `، ${q.sourceRef}` : ''}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </details>
-            </li>
-          ))}
-        </ol>
-      )}
-      {bank && (
-        <p className="muted small">
-          {count(bank.chapters.length, 'chapter')}، {count(total, 'question')}. تحتاج الجلسة إلى 4 فصول بالضبط، في كل منها 5
-          أسئلة.
-        </p>
-      )}
-      <div className="btn-row">
-        <button
-          className="btn btn--outline btn--s"
-          type="button"
-          disabled={!bank}
-          onClick={() => downloadJson(`question-bank-${fileStamp()}.private.json`, bank)}
-        >
-          تنزيل البنك (JSON)
-        </button>
-        <button className="btn btn--outline btn--s" type="button" onClick={() => fileRef.current && fileRef.current.click()}>
-          استيراد بنك جديد
-        </button>
-        <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={pick} />
-      </div>
-      <p className="muted small">الملف المنزّل يحتوي على الإجابات الصحيحة. احفظه بعيدًا عن المجلدات المشتركة والمستودع العام.</p>
-      {result && (
-        <Notice tone="success">
-          تم استيراد {count(result.questions, 'question')}.{' '}
-          {result.retiredQuestions ? `الأسئلة القديمة الموقوفة: ${result.retiredQuestions}، وهي محفوظة في السجل.` : ''}
-        </Notice>
-      )}
-      {error && <Notice tone="error">{messageFor(error)}</Notice>}
-      <ConfirmDialog
-        open={!!preview}
-        title="استبدال بنك الأسئلة؟"
-        confirmLabel="استيراد الأسئلة"
-        tone="primary"
-        busy={importing}
-        onConfirm={doImport}
-        onCancel={() => setPreview(null)}
-      >
-        {preview && (
-          <p>
-            يحتوي الملف <bdi>{preview.name}</bdi> على {count(preview.chapters, 'chapter')} و{count(preview.questions, 'question')}.
-            الأسئلة غير الموجودة فيه تُوقف ولا تُحذف، والجلسات الموجودة لا تتغير.
+        <>
+          <ol className="bank">
+            {bank.chapters.map((c) => (
+              <li key={c.id}>
+                <strong>{c.title}</strong> <span className="muted">({count(c.questions.length, 'question')})</span>
+              </li>
+            ))}
+          </ol>
+          <p className="muted small">
+            {count(bank.chapters.length, 'chapter')}، {count(questions.length, 'question')}
+            {mix ? ` (${mix})` : ''}.
           </p>
-        )}
-      </ConfirmDialog>
+          {bank.problem ? (
+            <Notice tone="warn">لا يمكن إنشاء جلسة بعد: {bank.problem}</Notice>
+          ) : null}
+        </>
+      )}
+      <BankFileActions token={token} bank={bank} onImported={onReload} onAuthError={onError} />
     </section>
   );
 }

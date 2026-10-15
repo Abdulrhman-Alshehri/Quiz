@@ -17,16 +17,25 @@ const MESSAGES = {
   QUESTION_PAUSED: 'أوقف المقدم المسابقة مؤقتًا، فلم تُرسل إجابتك. حاول مرة أخرى عند الاستئناف.',
   QUESTION_NOT_STARTED: 'تفتح الإجابات عند بدء المؤقت.',
   DEADLINE_PASSED: 'انتهى الوقت قبل وصول إجابتك.',
-  INVALID_OPTION: 'اختر إحدى الإجابات الأربع.',
+  INVALID_OPTION: 'اختر من الإجابات المعروضة.',
   ADMIN_AUTH_REQUIRED: 'انتهت صلاحية دخولك كمقدم. سجل الدخول مرة أخرى.',
   INVALID_PASSCODE: 'رمز المرور غير صحيح.',
   TOO_MANY_ATTEMPTS: 'محاولات خاطئة كثيرة من هذه الشبكة. انتظر 15 دقيقة ثم حاول مرة أخرى.',
   ADMIN_NOT_CONFIGURED: 'لم يُضبط رمز مرور المقدم بعد. راجع قسم ضبط رمز المرور في ملف README.',
   PASSCODE_TOO_SHORT: 'يجب أن يكون رمز المرور الجديد من 10 إلى 72 حرفًا.',
-  BANK_NOT_READY: 'يحتاج بنك الأسئلة إلى 4 فصول في كل منها 5 أسئلة قبل إنشاء جلسة.',
+  BANK_NOT_READY: 'بنك الأسئلة غير جاهز لإنشاء جلسة. افتح «تحرير الأسئلة» لترى السبب.',
+  BANK_CONFLICT: 'تغيّر هذا العنصر من جهاز آخر بعد أن فتحته. أعدنا تحميل البنك؛ راجع التغيير ثم أعد المحاولة.',
+  QUESTION_LIMIT: 'وصل هذا الفصل إلى الحد الأقصى من الأسئلة (10). أوقف سؤالًا أو انقله إلى فصل آخر.',
+  CHAPTER_LIMIT: 'وصل البنك إلى الحد الأقصى من الفصول (10). أوقف فصلًا أولًا.',
+  BANK_NEEDS_CHAPTER: 'يحتاج البنك إلى فصل واحد على الأقل. أضف فصلًا جديدًا قبل إيقاف هذا الفصل.',
+  CHAPTER_RETIRED: 'هذا الفصل موقوف. استعده أولًا.',
+  QUESTION_RETIRED: 'هذا السؤال موقوف. استعده أولًا.',
+  QUESTION_NOT_FOUND: 'لم يُعثر على هذا السؤال. حدّث الصفحة.',
+  CHANGE_NOT_FOUND: 'لم يُعثر على هذه النسخة في السجل.',
+  ORDER_MISMATCH: 'تغيّر ترتيب البنك من جهاز آخر. أعدنا تحميله؛ حاول مرة أخرى.',
   QUESTION_IN_PROGRESS: 'اكشف إجابة السؤال الحالي أولًا.',
   CHAPTER_COMPLETED: 'انتهى هذا الفصل. أعد تعيينه إذا أردت لعبه مرة أخرى.',
-  CHAPTER_NOT_FOUND: 'هذا الفصل ليس ضمن هذه الجلسة.',
+  CHAPTER_NOT_FOUND: 'لم يُعثر على هذا الفصل. حدّث الصفحة.',
   CHAPTER_NOT_FINISHED: 'بعض أسئلة هذا الفصل لم تُعرض بعد.',
   NO_ACTIVE_CHAPTER: 'ابدأ فصلًا أولًا.',
   NO_MORE_QUESTIONS: 'عُرضت كل أسئلة هذا الفصل.',
@@ -46,6 +55,13 @@ export class QuizError extends Error {
   }
 }
 
+// For codes whose message comes from the database (a reason in Arabic after the colon).
+function detailed(code, message) {
+  const e = new QuizError(code);
+  e.message = message;
+  return e;
+}
+
 const NETWORK_PATTERN = /failed to fetch|networkerror|load failed|network request failed|fetch failed|timeout/i;
 
 export function fromSupabaseError(error) {
@@ -53,12 +69,15 @@ export function fromSupabaseError(error) {
   if ((!error?.code || error.code === '') && NETWORK_PATTERN.test(raw)) {
     return new QuizError('NETWORK', raw);
   }
-  // Codes can carry detail after a colon, e.g. "BANK_INVALID:chapter 2 must have exactly 5 questions".
+  // Codes can carry a reason after a colon, e.g. "QUESTION_INVALID:حدّد الإجابة الصحيحة".
   const idx = raw.indexOf(':');
   const head = (idx === -1 ? raw : raw.slice(0, idx)).trim();
   const tail = idx === -1 ? '' : raw.slice(idx + 1).trim();
-  // The database explains import problems in English; the technical detail is kept after an Arabic lead-in.
-  if (head === 'BANK_INVALID') return new QuizError('BANK_INVALID', `لم يُستورد بنك الأسئلة. التفاصيل: ${tail}`);
+  // Bank checks explain the problem in Arabic after the colon; it is shown after a short lead-in.
+  if (head === 'BANK_INVALID') return new QuizError('BANK_INVALID', `لم يُستورد بنك الأسئلة. السبب: ${tail}`);
+  if (head === 'BANK_NOT_READY' && tail) return detailed('BANK_NOT_READY', `لا يمكن إنشاء جلسة بعد: ${tail}`);
+  if (head === 'QUESTION_INVALID') return detailed('QUESTION_INVALID', `لم يُحفظ السؤال: ${tail || 'بيانات غير صالحة'}.`);
+  if (head === 'CHAPTER_INVALID') return detailed('CHAPTER_INVALID', `لم يُحفظ الفصل: ${tail || 'بيانات غير صالحة'}.`);
   if (head === 'INVALID_SETTING') return new QuizError('INVALID_SETTING', `قيمة الإعداد غير مسموح بها (${tail}).`);
   if (/^[A-Z_]+$/.test(head)) return new QuizError(head, tail || undefined);
   return new QuizError('UNKNOWN');

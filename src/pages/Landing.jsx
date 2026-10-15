@@ -12,7 +12,7 @@ export default function Landing({ notFound = false }) {
       )}
       <h1 className="landing__title">مسابقة NPS المباشرة</h1>
       <p className="landing__sub">بيانات العميل وصوته والعمل عليه</p>
-      <p className="landing__meta">ورشة تعريف مستشاري الخدمة بمؤشر NPS | أربعة فصول، خمسة أسئلة لكل فصل</p>
+      <p className="landing__meta">ورشة تعريف مستشاري الخدمة بمؤشر NPS | مسابقة قصيرة على جوالك بعد كل فصل</p>
       <NpsScale />
       <div className="landing__actions">
         <a className="btn btn--primary btn--xl" href="#/join">

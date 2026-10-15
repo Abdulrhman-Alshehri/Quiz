@@ -9,7 +9,7 @@ import { BluePage, Logo } from '../components/Brand';
 import { OptionButton } from '../components/Options';
 import { Timer, timerState } from '../components/Timer';
 import { ConnectionBadge, Notice, Spinner, VisuallyHidden } from '../components/ui';
-import { count, optionLetter, percent, points, seconds } from '../utils/format';
+import { count, optionLetters, percent, points, seconds, typeLabel } from '../utils/format';
 
 export default function Play({ query }) {
   const sessionId = query.get('s') || lastSeatSessionId();
@@ -53,21 +53,21 @@ function Game({ seat }) {
   // One send per question launch. The key includes the start time so a question
   // replayed after a chapter reset can be answered again.
   const submit = useCallback(
-    async (launchKey, questionId, optionId) => {
+    async (launchKey, questionId, optionIds, auto = false) => {
       const cur = sendState.current[launchKey];
       if (cur === 'sending' || cur === 'sent') return;
       sendState.current[launchKey] = 'sending';
-      setPending((p) => ({ ...p, [launchKey]: { optionId, status: 'sending' } }));
+      setPending((p) => ({ ...p, [launchKey]: { optionIds, status: 'sending', auto } }));
       try {
-        const res = await api.submitAnswer(seat.token, questionId, optionId);
+        const res = await api.submitAnswer(seat.token, questionId, optionIds);
         sendState.current[launchKey] = 'sent';
         setPending((p) => ({
           ...p,
-          [launchKey]: { optionId: res.selectedOptionId || optionId, status: 'sent', result: res },
+          [launchKey]: { optionIds: res.selectedOptionIds || optionIds, status: 'sent', result: res, auto },
         }));
       } catch (e) {
         sendState.current[launchKey] = 'failed';
-        setPending((p) => ({ ...p, [launchKey]: { optionId, status: 'failed', error: e } }));
+        setPending((p) => ({ ...p, [launchKey]: { optionIds, status: 'failed', error: e, auto } }));
       }
       refresh();
     },
@@ -109,11 +109,12 @@ function Game({ seat }) {
       const launchKey = `${state.question.id}@${state.question.startedAt}`;
       body = (
         <QuestionView
+          key={launchKey}
           q={state.question}
           chapter={active}
           now={now}
           pending={pending[launchKey]}
-          onAnswer={(optionId) => submit(launchKey, state.question.id, optionId)}
+          onAnswer={(optionIds, auto) => submit(launchKey, state.question.id, optionIds, auto)}
           feedbackMode={state.session.feedbackMode}
         />
       );
@@ -157,47 +158,94 @@ function Game({ seat }) {
   );
 }
 
-// 1-4 on any keyboard (also Arabic-Indic digits), and the Latin or Arabic option letters.
+// 1-6 on any keyboard (also Arabic-Indic digits), and the Latin or Arabic option letters.
 const KEYMAP = {
-  1: 'A', 2: 'B', 3: 'C', 4: 'D',
-  '١': 'A', '٢': 'B', '٣': 'C', '٤': 'D',
-  a: 'A', b: 'B', c: 'C', d: 'D',
-  'أ': 'A', 'ا': 'A', 'ب': 'B', 'ج': 'C', 'د': 'D',
+  1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E', 6: 'F',
+  '١': 'A', '٢': 'B', '٣': 'C', '٤': 'D', '٥': 'E', '٦': 'F',
+  a: 'A', b: 'B', c: 'C', d: 'D', e: 'E', f: 'F',
+  'أ': 'A', 'ا': 'A', 'ب': 'B', 'ج': 'C', 'د': 'D', 'ه': 'E', 'و': 'F',
 };
 
+function chosenIds(answer) {
+  if (!answer) return null;
+  if (answer.selectedOptionIds && answer.selectedOptionIds.length) return answer.selectedOptionIds;
+  return answer.selectedOptionId ? [answer.selectedOptionId] : null;
+}
+
+// How a recorded answer reads back: the option text for true/false, letters otherwise.
+function describeChoice(q, ids) {
+  if (q.type === 'true_false') return ids.map((id) => q.options.find((o) => o.id === id)?.text || id).join('، ');
+  return optionLetters(ids);
+}
+
 function QuestionView({ q, chapter, now, pending, onAnswer, feedbackMode }) {
+  const multi = q.type === 'multiple';
   const t = timerState(q, now);
-  const fromServer = q.myAnswer && q.myAnswer.selectedOptionId ? q.myAnswer : null;
-  const fromLocal = pending && pending.status !== 'failed' ? { selectedOptionId: pending.optionId } : null;
-  const mine = fromServer || fromLocal;
+  const serverIds = chosenIds(q.myAnswer);
+  const localIds = pending && pending.status !== 'failed' ? pending.optionIds : null;
+  const mine = serverIds || localIds;
   const sending = pending?.status === 'sending';
   const immediate = feedbackMode === 'immediate';
-  const result = immediate ? (fromServer && fromServer.isCorrect !== null && fromServer.isCorrect !== undefined ? fromServer : pending?.result) : null;
+  const fromServer = serverIds ? q.myAnswer : null;
+  const result = immediate
+    ? fromServer && fromServer.isCorrect !== null && fromServer.isCorrect !== undefined
+      ? fromServer
+      : pending?.result
+    : null;
   const canAnswer = !mine && t.phase === 'running';
   const secs = Math.ceil(t.remaining / 1000);
-  const answerRef = useRef(onAnswer);
-  answerRef.current = onAnswer;
+  // Multiple choice: options ticked but not yet confirmed.
+  const [picked, setPicked] = useState([]);
+  const autoSent = useRef(false);
+  const live = useRef({});
+  live.current = { canAnswer, picked, onAnswer, multi };
 
-  // Keyboard: 1-4 answers on laptops and tablets with keyboards.
+  const choose = useCallback((id) => {
+    const cur = live.current;
+    if (!cur.canAnswer) return;
+    if (cur.multi) setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id].sort()));
+    else cur.onAnswer([id]);
+  }, []);
+  const confirm = useCallback(() => {
+    const cur = live.current;
+    if (cur.canAnswer && cur.picked.length) cur.onAnswer(cur.picked);
+  }, []);
+
+  // Keyboard: 1-6 answer (or tick, for multiple choice); Enter confirms.
   useEffect(() => {
     if (!canAnswer) return undefined;
     const onKey = (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Enter' && live.current.multi) {
+        e.preventDefault();
+        confirm();
+        return;
+      }
       const id = KEYMAP[String(e.key).toLowerCase()];
-      if (id) answerRef.current(id);
+      if (id && q.options.some((o) => o.id === id)) choose(id);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [canAnswer]);
+  }, [canAnswer, choose, confirm, q.options]);
+
+  // Time is up with options ticked but not confirmed: send them, so a complete
+  // answer still counts (the database accepts it within the grace period).
+  useEffect(() => {
+    if (multi && !mine && t.phase === 'done' && picked.length && !autoSent.current) {
+      autoSent.current = true;
+      onAnswer(picked, true);
+    }
+  }, [multi, mine, t.phase, picked, onAnswer]);
 
   const optionState = (id) => {
     if (mine) {
-      if (id !== mine.selectedOptionId) return 'other';
-      if (result && result.isCorrect === true) return 'correct-mine';
-      if (result && result.isCorrect === false) return 'wrong';
+      if (!mine.includes(id)) return 'other';
+      if (!multi && result && result.isCorrect === true) return 'correct-mine';
+      if (!multi && result && result.isCorrect === false) return 'wrong';
       return 'selected';
     }
-    return canAnswer ? 'idle' : 'dim';
+    if (!canAnswer) return 'dim';
+    return multi && picked.includes(id) ? 'checked' : 'idle';
   };
 
   let status;
@@ -205,10 +253,20 @@ function QuestionView({ q, chapter, now, pending, onAnswer, feedbackMode }) {
   else if (t.phase === 'leadin') status = `اقرأ السؤال. تفتح الإجابات خلال ${Math.ceil(t.leadIn / 1000)} ث.`;
   else if (sending) status = 'جارٍ إرسال إجابتك…';
   else if (mine && result && result.isCorrect) status = `إجابة صحيحة. +${points(result.points)} نقطة.`;
-  else if (mine && result && result.isCorrect === false) status = 'ليست هذه. تظهر الإجابة الصحيحة عند الكشف.';
-  else if (mine) status = `تم تسجيل إجابتك: ${optionLetter(mine.selectedOptionId)}. بانتظار كشف الإجابة.`;
-  else if (pending?.status === 'failed') status = `${messageFor(pending.error)}${t.phase === 'running' ? ' اختر إجابة للمحاولة مرة أخرى.' : ''}`;
-  else if (t.phase === 'done') status = 'انتهى الوقت. بانتظار كشف الإجابة.';
+  else if (mine && result && result.isCorrect === false) {
+    status = multi
+      ? 'ليست الإجابة الكاملة الصحيحة. تظهر الإجابات الصحيحة عند الكشف.'
+      : 'ليست هذه. تظهر الإجابة الصحيحة عند الكشف.';
+  } else if (mine) {
+    status = `${pending?.auto ? 'انتهى الوقت فأُرسلت اختياراتك. ' : ''}تم تسجيل إجابتك: ${describeChoice(q, mine)}. بانتظار كشف الإجابة.`;
+  } else if (pending?.status === 'failed') {
+    status = `${messageFor(pending.error)}${t.phase === 'running' ? (multi ? ' اضغط «تأكيد الإجابة» للمحاولة مرة أخرى.' : ' اختر إجابة للمحاولة مرة أخرى.') : ''}`;
+  } else if (t.phase === 'done') status = 'انتهى الوقت. بانتظار كشف الإجابة.';
+  else if (multi) {
+    status = picked.length
+      ? `اخترت ${count(picked.length, 'option')}. اضغط «تأكيد الإجابة» عندما تنتهي.`
+      : 'اختر كل الإجابات الصحيحة، ثم اضغط «تأكيد الإجابة». لديك محاولة واحدة.';
+  } else if (q.type === 'true_false') status = 'صح أم خطأ؟ لديك محاولة واحدة.';
   else status = 'اختر إجابة واحدة. لديك محاولة واحدة.';
 
   return (
@@ -219,23 +277,46 @@ function QuestionView({ q, chapter, now, pending, onAnswer, feedbackMode }) {
           السؤال {q.index} من {q.total}
         </span>
       </div>
+      {q.type && q.type !== 'single' && (
+        <p className={`q__type q__type--${q.type}`}>
+          {typeLabel(q.type)}
+          {multi ? ': اختر كل الإجابات الصحيحة' : ''}
+        </p>
+      )}
       <Timer question={q} now={now} />
       <h1 id="q-text" className="q__text">
         {q.text}
       </h1>
       {t.phase !== 'leadin' && (
-        <div className="opts" role="group" aria-label="الإجابات">
-          {q.options.map((o, i) => (
-            <OptionButton
-              key={o.id}
-              option={o}
-              state={optionState(o.id)}
-              disabled={!canAnswer}
-              onSelect={onAnswer}
-              hotkey={canAnswer ? String(i + 1) : null}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            className={`opts opts--n${q.options.length}${q.type === 'true_false' ? ' opts--tf' : ''}`}
+            role="group"
+            aria-label={multi ? 'الإجابات، يمكن اختيار أكثر من إجابة' : 'الإجابات'}
+          >
+            {q.options.map((o, i) => (
+              <OptionButton
+                key={o.id}
+                option={o}
+                state={optionState(o.id)}
+                disabled={!canAnswer}
+                onSelect={choose}
+                hotkey={canAnswer ? String(i + 1) : null}
+                multi={multi}
+              />
+            ))}
+          </div>
+          {multi && !mine && (
+            <button
+              className="btn btn--primary btn--block btn--xl q__confirm"
+              type="button"
+              disabled={!canAnswer || picked.length === 0 || sending}
+              onClick={confirm}
+            >
+              تأكيد الإجابة{picked.length ? ` (${picked.length})` : ''}
+            </button>
+          )}
+        </>
       )}
       <p className={`q__status${pending?.status === 'failed' ? ' is-error' : ''}`} role="status" aria-live="polite">
         {status}
@@ -250,14 +331,17 @@ function QuestionView({ q, chapter, now, pending, onAnswer, feedbackMode }) {
 function RevealView({ q, chapter, standing, count: total }) {
   const my = q.myAnswer;
   const outcome = !my ? 'none' : my.status === 'timed_out' ? 'timeout' : my.isCorrect ? 'correct' : 'wrong';
-  const correct = q.options.find((o) => o.id === q.correctOptionId);
-  const chosen = my && my.selectedOptionId ? q.options.find((o) => o.id === my.selectedOptionId) : null;
+  const multi = q.type === 'multiple';
+  const correctIds = q.correctOptionIds || (q.correctOptionId ? [q.correctOptionId] : []);
+  const mine = chosenIds(my) || [];
   const copy = {
     correct: { title: 'إجابة صحيحة', icon: '✓' },
     wrong: { title: 'ليست هذه المرة', icon: '✕' },
     timeout: { title: 'انتهى الوقت', icon: '⏱' },
     none: { title: 'انضممت بعد هذا السؤال', icon: '·' },
   }[outcome];
+  const correct = q.options.filter((o) => correctIds.includes(o.id));
+  const chosen = q.options.filter((o) => mine.includes(o.id));
   return (
     <section className={`reveal reveal--${outcome}`} aria-labelledby="reveal-title">
       <p className="q__meta">
@@ -276,16 +360,41 @@ function RevealView({ q, chapter, standing, count: total }) {
         )}
         {(outcome === 'wrong' || outcome === 'timeout') && <p className="reveal__points">0 نقطة</p>}
       </div>
-      <div className="reveal__answers">
-        <p className="reveal__label">الإجابة الصحيحة</p>
-        {correct && <OptionButton option={correct} state={outcome === 'correct' ? 'correct-mine' : 'correct'} disabled />}
-        {outcome === 'wrong' && chosen && (
-          <>
-            <p className="reveal__label">إجابتك</p>
-            <OptionButton option={chosen} state="wrong" disabled />
-          </>
-        )}
-      </div>
+      {multi ? (
+        <div className="reveal__answers">
+          <p className="reveal__label">
+            {outcome === 'correct'
+              ? 'اخترت الإجابات الصحيحة كلها.'
+              : outcome === 'wrong'
+                ? 'النقاط لمن يختار الإجابات الصحيحة كلها ولا شيء غيرها. الصحيحة باللون الأخضر:'
+                : 'الإجابات الصحيحة باللون الأخضر:'}
+          </p>
+          {q.options.map((o) => {
+            const right = correctIds.includes(o.id);
+            const picked = mine.includes(o.id);
+            let state = 'dim';
+            if (right && picked) state = 'correct-mine';
+            else if (right) state = outcome === 'wrong' ? 'missed' : 'correct';
+            else if (picked) state = 'wrong';
+            return <OptionButton key={o.id} option={o} state={state} disabled />;
+          })}
+        </div>
+      ) : (
+        <div className="reveal__answers">
+          <p className="reveal__label">الإجابة الصحيحة</p>
+          {correct.map((o) => (
+            <OptionButton key={o.id} option={o} state={outcome === 'correct' ? 'correct-mine' : 'correct'} disabled />
+          ))}
+          {outcome === 'wrong' && chosen.length > 0 && (
+            <>
+              <p className="reveal__label">إجابتك</p>
+              {chosen.map((o) => (
+                <OptionButton key={o.id} option={o} state="wrong" disabled />
+              ))}
+            </>
+          )}
+        </div>
+      )}
       {q.explanation && (
         <p className="reveal__why">
           <span className="reveal__why-label">التوضيح</span>
@@ -309,7 +418,7 @@ function ChapterIntro({ chapter }) {
       <h1 className="intro__title">{chapter.title}</h1>
       {chapter.description && <p className="lead">{chapter.description}</p>}
       <p className="intro__rules">
-        {count(chapter.questionCount, 'question')}. يظهر السؤال أولًا، ثم تفتح الإجابات الأربع مع بدء المؤقت. الإجابة الصحيحة
+        {count(chapter.questionCount, 'question')}. يظهر السؤال أولًا، ثم تفتح الإجابات مع بدء المؤقت. الإجابة الصحيحة
         الأسرع تكسب نقاطًا أكثر.
       </p>
       <p className="muted">انظر إلى الشاشة الكبيرة. سيظهر السؤال الأول هنا أيضًا.</p>
