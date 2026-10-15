@@ -13,6 +13,18 @@
 --   correctOptionId / selectedOptionId (the first id), and submit_answer still
 --   accepts p_option_id.
 
+-- Do not upgrade while players can answer: the table changes below briefly lock
+-- the answers, and an answer sent in that moment could fail. Run it between
+-- questions; nothing is changed if this stops it.
+do $$
+begin
+  if exists (select 1 from public.sessions
+             where status <> 'ended' and phase = 'question'
+               and question_deadline > now() - interval '1 minute') then
+    raise exception 'A question is open in a live session. Apply this migration between questions.';
+  end if;
+end $$;
+
 -- ===========================================================================
 -- Rules and validation
 -- ===========================================================================
